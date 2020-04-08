@@ -55,35 +55,59 @@ class Lexer:
         Returns the tokens of the language
         """
 
-        # backslash plague - eliminated because of python raw strings
-        split_patt = re.compile(r"(\+)|\s|(\()|(\))")  # parentheses around a pattern
-        # captures the value
-
-        # a more readable way to write the split
-        # pattern above using the VERBOSE option
         split_patt = re.compile(
-            r"""             # Split on 
-               (\+) |        #  plus and capture
-               (-) |         #  minus and capture, minus not special unless in []
-               \s   |        #  whitespace
-               (\() |        #  left paren and capture
-               (\))          #  right paren and capture
+            r"""            # Split on 
+                (\+) |      # plus and capture (minus is not special unless in [])
+                (-) |      # minus and capture
+                (\*) |      # multiply and capture  
+                (/) |      # divide and capture
+                \s   |      # whitespace
+                (\{) |      # left brace and capture
+                (\}) |      # right brace and capture
+                (\() |      # left paren and capture
+                (\))        # right paren and capture
             """,
             re.VERBOSE
         )
 
+        tokenDict = {
+            "([0-9][_0-9]*[0-9]$|[0-9]$)": Lexer.INTLIT,
+            '\|\|': Lexer.OR,
+            '&&': Lexer.AND,
+            '==': Lexer.EQ,
+            '\!\=': Lexer.NEQ,
+            '\<': Lexer.LT,
+            '\<=': Lexer.LTE,
+            '\>': Lexer.GT,
+            '\>=': Lexer.GTE,
+            '=': Lexer.ASSIGN,
+            '\+': Lexer.PLUS,
+            '-': Lexer.MINUS,
+            '\*': Lexer.MULT,
+            '/': Lexer.DIV,
+            '%': Lexer.MOD,
+            '!': Lexer.FACT,
+            ';': Lexer.SEMI,
+            '\,': Lexer.COMMA,
+            '\{': Lexer.LBRACE,
+            '\}': Lexer.RBRACE,
+            '\(': Lexer.LPAREN,
+            '\)': Lexer.RPAREN
+        }
+
+        line_num = 0
         for line in self.f:
+            line_num += 1
             tokens = (t for t in split_patt.split(line) if t)
             for t in tokens:
-                if t == '+':  # TODO replace with a dictionary
-                    yield (Lexer.PLUS, t)
-                elif t == '(':
-                    yield (Lexer.LPAREN, t)
-                elif t == ')':
-                    yield (Lexer.RPAREN, t)
-                else:
-                    yield (Lexer.ID, t)
-
+                matched = 0
+                for i in tokenDict.keys():
+                    if re.match(i, t):
+                        yield (tokenDict[i], t, line_num)
+                        matched = 1
+                        break
+                if matched == 0:
+                    yield (Lexer.ID, t, line_num)  #
 
 if __name__ == "__main__":
 
@@ -91,9 +115,13 @@ if __name__ == "__main__":
 
     g = lex.token_generator()
 
+    print('{:<10}{:<20}{:<12}'.format("Token", "Name", "Line Number"))
+    print("-"*50)
+
     while True:
         try:
-            print(next(g))
+            temp = next(g)
+            print('{:<10}{:<20}{:<12}'.format(temp[0], temp[1], temp[2]))
         except StopIteration:
             print("Done")
             break
