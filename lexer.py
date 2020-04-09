@@ -72,6 +72,7 @@ class Lexer:
 
         tokenDict = {
             "([0-9][_0-9]*[0-9]$|[0-9]$)": Lexer.INTLIT,
+            '^[1-9]\.(_)*[_0-9]*[e|_0-9](-|\+)?[_0-9]*[0-9]$': Lexer.FLOATLIT,
             '\|\|': Lexer.OR,
             '&&': Lexer.AND,
             '==': Lexer.EQ,
