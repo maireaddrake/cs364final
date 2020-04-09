@@ -4,10 +4,11 @@ import re
 
 #  """\n$1\n""" - replacement text bos where $1 represents the captured value
 
-# sample comment
-
 """
- sample comment
+current problem: 
+    number like 1.23__e-1_1_ can not be ID (because it starts with a digit)
+    can not recognize a comment properly
+    numbers in token part instead of token names
 """
 
 
@@ -56,10 +57,10 @@ class Lexer:
         """
 
         split_patt = re.compile(
-            r"""            # Split on 
+            r"""            # Split on
                 (\+) |      # plus and capture (minus is not special unless in [])
                 (-) |      # minus and capture
-                (\*) |      # multiply and capture  
+                (\*) |      # multiply and capture
                 (/) |      # divide and capture
                 \s   |      # whitespace
                 (\{) |      # left brace and capture
@@ -72,7 +73,7 @@ class Lexer:
 
         tokenDict = {
             "([0-9][_0-9]*[0-9]$|[0-9]$)": Lexer.INTLIT,
-            '^[1-9]\.(_)*[_0-9]*[e|_0-9](-|\+)?[_0-9]*[0-9]$': Lexer.FLOATLIT,
+            '^[1-9]*(\.)?(_)*[_0-9]*[e|_0-9](-|\+)?[_0-9]*[0-9]$': Lexer.FLOATLIT,
             '\|\|': Lexer.OR,
             '&&': Lexer.AND,
             '==': Lexer.EQ,
