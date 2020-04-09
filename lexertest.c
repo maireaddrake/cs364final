@@ -1,39 +1,34 @@
-a   +(b+d)
+;)  ( 12345
 
-=
+  	fred zoo    		identifier
 
-&&
 
-/54
+  	bool else if print false true int main while char float
 
-6
-4_
- +           e
 
-345
+  	123 < 34.567 && true <=    >= < >  ==    =  || [] / * !=  , {}
+   =  =   <
+  	int a,b;
 
-325_334
+        _9ident = -3.14159
 
-_345
+  	>><<
 
- +index
+  	{
 
- 123_456_789
+        "a string literal"
 
- 03e+9
+  	}
 
- // a comment
+  	!
 
- 3.141_592_653_589_793
+  	|| %  - * +
 
-_123_456
 
-? @#$  'a' ^ ~ ` :
 
-4a
 
->=
 
-3.14159
-
-123_
+  	3.4.5
+	4a
+	"
+	? @#$  'a' ^ ~ ` :

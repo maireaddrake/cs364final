@@ -8,6 +8,12 @@ import re
 current problem: 
     number like 1.23__e-1_1_ can not be ID (because it starts with a digit)
     can not recognize a comment properly
+    wrong recognition:
+        >><<      (two separate tokens << and >>)
+        int a,b;  (five tokens)
+        "a string literal"
+    do we ignore all illegal tokens?
+    1.23e+9 can be separated 
 """
 
 
