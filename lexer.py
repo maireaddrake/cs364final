@@ -41,6 +41,7 @@ class Lexer:
     LPAREN = 24
     RPAREN = 25
 
+
     # fn - file name we are lexing
     def __init__(self, fn: str):
 
@@ -73,7 +74,8 @@ class Lexer:
 
         tokenDict = {
             "([0-9][_0-9]*[0-9]$|[0-9]$)": Lexer.INTLIT,
-            '^[1-9]*(\.)?(_)*[_0-9]*[e|_0-9](-|\+)?[_0-9]*[0-9]$': Lexer.FLOATLIT,
+            '^[1-9][_0-9]*(\.)?(_)*[_0-9]*[e|_0-9](-|\+)?[_0-9]*[0-9]$': Lexer.FLOATLIT,
+            '^[_a-zA-Z][_a-zA-Z0-9]*': Lexer.ID,
             '\|\|': Lexer.OR,
             '&&': Lexer.AND,
             '==': Lexer.EQ,
@@ -108,12 +110,12 @@ class Lexer:
                         yield (tokenDict[i], t, line_num)
                         matched = 1
                         break
-                if matched == 0:
-                    yield (Lexer.ID, t, line_num)  #
+                # if matched == 0:
+                #     yield (Lexer.ID, t, line_num)  #
 
 if __name__ == "__main__":
 
-    lex = Lexer("test.sluc")
+    lex = Lexer("lexertest.c")
 
     g = lex.token_generator()
 
