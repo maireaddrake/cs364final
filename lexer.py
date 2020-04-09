@@ -8,7 +8,6 @@ import re
 current problem: 
     number like 1.23__e-1_1_ can not be ID (because it starts with a digit)
     can not recognize a comment properly
-    numbers in token part instead of token names
 """
 
 
