@@ -14,32 +14,32 @@ current problem:
 
 class Lexer:
     # class variables
-    INTLIT = 0  # codes for the "kind" of value
-    FLOATLIT = 1
-    STRINGLIT = 2
-    ID = 3
-    KEYWORD = 4
-    OR = 5
-    AND = 6
-    EQ = 7
-    NEQ = 8
-    LT = 9
-    LTE = 10
-    GT = 11
-    GTE = 12
-    ASSIGN = 13
-    PLUS = 14
-    MINUS = 15
-    MULT = 16
-    DIV = 17
-    MOD = 18
-    FACT = 19
-    SEMI = 20
-    COMMA = 21
-    LBRACE = 22
-    RBRACE = 23
-    LPAREN = 24
-    RPAREN = 25
+    INTLIT = "Integer"  # codes for the "kind" of value
+    FLOATLIT = "Real number"
+    STRINGLIT = "String"
+    ID = "identifier"
+    KEYWORD = "Keyword"
+    OR = "or"
+    AND = "and"
+    EQ = "equal-equal"
+    NEQ = "not equal"
+    LT = "less than"
+    LTE = "less than or equal"
+    GT = "greater than"
+    GTE = "greater than or equal"
+    ASSIGN = "assignment"
+    PLUS = "plus"
+    MINUS = "minus"
+    MULT = "multiply"
+    DIV = "divide"
+    MOD = "mod"
+    FACT = "factorial"
+    SEMI = "semicolon"
+    COMMA = "comma"
+    LBRACE = "Left brace"
+    RBRACE = "Right brace"
+    LPAREN = "Left paren"
+    RPAREN = "Right paren"
 
 
     # fn - file name we are lexing
@@ -83,7 +83,7 @@ class Lexer:
             '\<': Lexer.LT,
             '\<=': Lexer.LTE,
             '\>': Lexer.GT,
-            '\>=': Lexer.GTE,
+            '\>\=': Lexer.GTE,
             '=': Lexer.ASSIGN,
             '\+': Lexer.PLUS,
             '-': Lexer.MINUS,
@@ -119,13 +119,13 @@ if __name__ == "__main__":
 
     g = lex.token_generator()
 
-    print('{:<10}{:<20}{:<12}'.format("Token", "Name", "Line Number"))
-    print("-"*50)
+    print('{:<20}{:<30}{:<12}'.format("Token", "Name", "Line Number"))
+    print("-"*70)
 
     while True:
         try:
             temp = next(g)
-            print('{:<10}{:<20}{:<12}'.format(temp[0], temp[1], temp[2]))
+            print('{:<20}{:<30}{:<12}'.format(temp[0], temp[1], temp[2]))
         except StopIteration:
             print("Done")
             break
