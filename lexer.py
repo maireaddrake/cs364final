@@ -63,8 +63,8 @@ class Lexer:
 
         split_patt = re.compile(
             r"""            # Split on
-                ((?<!(e))\+) |      # plus and capture (minus is not special unless in [])
-                ((?<!(e))-) |      # minus and capture
+                ((?<!(e|_))\+) |      # plus and capture (minus is not special unless in [])
+                ((?<!(e|_))-) | 
                 (\*)(?!(\/)) |      # multiply and capture
                 (\/)(?!(\/|\*)) |      # divide and capture (if not followed by another / or *)
                 (//) |      # comment indicator and capture
