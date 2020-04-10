@@ -86,8 +86,8 @@ class Lexer:
                 (\>\>) |    # binary right shift and capture
                 (,)  |
                 (;)  |
-                (\") |
-                (\') |
+                ((?<!(\\))\") |
+                ((?<!(\\))\') |
                 (:)
             """,
             re.VERBOSE
@@ -132,15 +132,22 @@ class Lexer:
             tokens = (t for t in split_patt.split(line) if t)
             for t in tokens:
                 matched = 0
-                if re.match('\"|\'', t) and in_something == 0:
+                if re.match('\"', t) and in_something == 0:
                     in_something = 1
                     temp = ""
-                elif not re.match('\"|\'', t) and in_something == 1:
-                    temp = temp + t
-                elif re.match('\"|\'', t) and in_something == 1:
+                elif re.match('\'', t) and in_something == 0:
+                    in_something = 2
+                    temp = ""
+                elif re.match(r'(?<!(\\))\"', t) and in_something == 1:
                     in_something = 0
                     yield (Lexer.STRINGLIT, temp, line_num)
-                elif in_something == 2:
+                elif re.match(r'(?<!(\\))\'', t) and in_something == 2:
+                    in_something = 0
+                    yield (Lexer.STRINGLIT, temp, line_num)
+                elif (in_something == 1 or in_something == 2):
+                    temp = temp + t
+
+                elif in_something == 3:
                     if re.match('\*/', t):
                         in_something = 0
                         continue
@@ -158,10 +165,10 @@ class Lexer:
                         if re.match('//', t):
                             break
                         elif re.match('/\*', t):
-                            in_something = 2
+                            in_something = 3
                         else:
                             yield ("ILLEGAL", t, line_num)
-            if in_something == 1:
+            if in_something == 1 or in_something == 2:
                 in_something = 0
                 yield ("ILLEGAL", "[MISSING \"]", line_num)
 
@@ -182,13 +189,13 @@ if __name__ == "__main__":
 
     g = lex.token_generator()
 
-    print('{:<30}{:<50}{:<12}'.format("Token", "Name", "Line Number"))
+    print('{:<30}{:<65}{:<12}'.format("Token", "Name", "Line Number"))
     print("-"*70)
 
     while True:
         try:
             temp = next(g)
-            print('{:<30}{:<50}{:<12}'.format(temp[0], temp[1], temp[2]))
+            print('{:<30}{:<65}{:<12}'.format(temp[0], temp[1], temp[2]))
         except StopIteration:
             print("Done")
             break
