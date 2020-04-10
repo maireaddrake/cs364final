@@ -77,6 +77,7 @@ class Lexer:
             '^[1-9][_0-9]*(\.)?(_)*[_0-9]*[e|_0-9](-|\+)?[_0-9]*[0-9]$': Lexer.FLOATLIT,
             '^[_a-zA-Z][_a-zA-Z0-9]*': Lexer.ID,
             '^\"|\'.+\"|\'': Lexer.STRINGLIT,
+            'print|bool|else|false|if|true|float|int|while': Lexer.KEYWORD,
             '\|\|': Lexer.OR,
             '&&': Lexer.AND,
             '==': Lexer.EQ,
