@@ -62,12 +62,21 @@ class Lexer:
                 (\+) |      # plus and capture (minus is not special unless in [])
                 (-) |      # minus and capture
                 (\*) |      # multiply and capture
-                (/) |      # divide and capture
+                (\/)(?!(\/|\*)) |      # divide and capture (if not followed by another / or *)
+                (//) |      # comment indicator and capture
+                (/\*) |     # multiline comment indicator
                 \s   |      # whitespace
                 (\{) |      # left brace and capture
                 (\}) |      # right brace and capture
                 (\() |      # left paren and capture
-                (\))        # right paren and capture
+                (\)) |       # right paren and capture
+                (\<)(?!(\=)) |   # less than and capture (if not followed by =)
+                (\<\=) |
+                (\>)(?!(\=)) |   # greater than and capture (if not followed by =)
+                (\>\=) |
+                (,)  |
+                (;)  |
+                (:)
             """,
             re.VERBOSE
         )
@@ -76,20 +85,20 @@ class Lexer:
             "([0-9][_0-9]*[0-9]$|[0-9]$)": Lexer.INTLIT,
             '^[1-9][_0-9]*(\.)?(_)*[_0-9]*[e|_0-9](-|\+)?[_0-9]*[0-9]$': Lexer.FLOATLIT,
             '^[_a-zA-Z][_a-zA-Z0-9]*': Lexer.ID,
-            '^\"|\'.+\"|\'': Lexer.STRINGLIT
+            '^\"|\'.+\"|\'': Lexer.STRINGLIT,
             '\|\|': Lexer.OR,
             '&&': Lexer.AND,
             '==': Lexer.EQ,
             '\!\=': Lexer.NEQ,
-            '\<': Lexer.LT,
             '\<=': Lexer.LTE,
-            '\>': Lexer.GT,
+            '\<': Lexer.LT,
             '\>\=': Lexer.GTE,
+            '\>': Lexer.GT,
             '=': Lexer.ASSIGN,
             '\+': Lexer.PLUS,
             '-': Lexer.MINUS,
             '\*': Lexer.MULT,
-            '/': Lexer.DIV,
+            '(\/)(?!(\/|\*))': Lexer.DIV,
             '%': Lexer.MOD,
             '!': Lexer.FACT,
             ';': Lexer.SEMI,
@@ -101,18 +110,39 @@ class Lexer:
         }
 
         line_num = 0
+        in_comment = 0
         for line in self.f:
-            line_num += 1
-            tokens = (t for t in split_patt.split(line) if t)
-            for t in tokens:
-                matched = 0
-                for i in tokenDict.keys():
-                    if re.match(i, t):
-                        yield (tokenDict[i], t, line_num)
-                        matched = 1
-                        break
-                # if matched == 0:
-                #     yield (Lexer.ID, t, line_num)  #
+            if in_comment == 1:
+                line_num += 1
+                in_comment = 0
+                continue
+            else:
+                line_num += 1
+                tokens = (t for t in split_patt.split(line) if t)
+                for t in tokens:
+                    matched = 0
+                    for i in tokenDict.keys():
+                        if re.match(i, t):
+                            yield (tokenDict[i], t, line_num)
+                            matched = 1
+                            break
+                    if matched == 0:
+                        if re.match('//', t):
+                            in_comment = 1
+                            break
+                        else:
+                            raise SLUCLexicalError("Error: Illegal Identifier {0} on line {1}".format(t, line_num))
+
+
+# create our own exception by inheriting from python's exception
+class SLUCLexicalError(Exception):
+    def __init__(self, message: str):
+        Exception.__init__(self)
+        self.message = message
+
+    def __str__(self):
+        return self.message
+
 
 if __name__ == "__main__":
 
@@ -120,13 +150,13 @@ if __name__ == "__main__":
 
     g = lex.token_generator()
 
-    print('{:<20}{:<30}{:<12}'.format("Token", "Name", "Line Number"))
+    print('{:<30}{:<30}{:<12}'.format("Token", "Name", "Line Number"))
     print("-"*70)
 
     while True:
         try:
             temp = next(g)
-            print('{:<20}{:<30}{:<12}'.format(temp[0], temp[1], temp[2]))
+            print('{:<30}{:<30}{:<12}'.format(temp[0], temp[1], temp[2]))
         except StopIteration:
             print("Done")
             break
