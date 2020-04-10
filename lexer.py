@@ -2,15 +2,6 @@ import sys
 from typing import Generator, Tuple
 import re
 
-#  """\n$1\n""" - replacement text bos where $1 represents the captured value
-
-"""
-current problem: 
-    number like 1.23__e-1_1_ can not be ID (because it starts with a digit)
-    can not recognize a comment properly
-    numbers in token part instead of token names
-"""
-
 
 class Lexer:
     # class variables
@@ -96,6 +87,7 @@ class Lexer:
         tokenDict = {
             "([0-9][_0-9]*[0-9]$|[0-9]$)": Lexer.INTLIT,
             '^[1-9][_0-9]*(\.)?(_)*[_0-9]*[e|_0-9](-|\+)?[_0-9]*[0-9]$': Lexer.FLOATLIT,
+            'print|bool|else|false|if|true|float|int|char|while|main': Lexer.KEYWORD,
             '^[_a-zA-Z][_a-zA-Z0-9]*': Lexer.ID,
             '(^\".+\")|(^\'.+\')': Lexer.STRINGLIT,
             '\|\|': Lexer.OR,
@@ -132,6 +124,7 @@ class Lexer:
             tokens = (t for t in split_patt.split(line) if t)
             for t in tokens:
                 matched = 0
+                # if tokens are in between quotes, they are merged and yielded as 1 string object
                 if re.match('\"', t) and in_something == 0:
                     in_something = 1
                     temp = ""
@@ -147,6 +140,7 @@ class Lexer:
                 elif (in_something == 1 or in_something == 2):
                     temp = temp + t
 
+                # if tokens are in a multi-line comment they are ignored until the */ is found
                 elif in_something == 3:
                     if re.match('\*/', t):
                         in_something = 0
@@ -154,8 +148,10 @@ class Lexer:
                     else:
                         continue
                 else:
+                    # ignore empty spaces if not in a string
                     if re.match('\s', t):
                         continue
+                    # go through all tokens regexes to find a match
                     for i in tokenDict.keys():
                         if re.match(i, t):
                             yield (tokenDict[i], t, line_num)
@@ -184,6 +180,10 @@ class SLUCLexicalError(Exception):
 
 
 if __name__ == "__main__":
+
+    import sys
+
+    filename = sys.argv[-1]
 
     lex = Lexer("ed'stest.c")
 
