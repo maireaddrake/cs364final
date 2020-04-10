@@ -45,7 +45,6 @@ class Lexer:
             print("Exiting")
             sys.exit(1)  # can't go on
 
-
     def token_generator(self) -> Generator[Tuple[int, str], None, None]:
         """
         Returns the tokens of the language
@@ -54,7 +53,7 @@ class Lexer:
         split_patt = re.compile(
             r"""            # Split on
                 ((?<!(e|_))\+) |      # plus and capture (minus is not special unless in [])
-                ((?<!(e|_))-) |      # minus and capture
+                ((?<!(e|_))-) | 
                 (\*)(?!(\/)) |      # multiply and capture
                 (\/)(?!(\/|\*)) |      # divide and capture (if not followed by another / or *)
                 (//) |      # comment indicator and capture
@@ -76,8 +75,8 @@ class Lexer:
                 (\>\>) |    # binary right shift and capture
                 (,)  |
                 (;)  |
-                (\") |
-                (\') |
+                ((?<!(\\))\") |
+                ((?<!(\\))\') |
                 (:)
             """,
             re.VERBOSE
@@ -85,8 +84,8 @@ class Lexer:
 
         tokenDict = {
             "([0-9][_0-9]*[0-9]$|[0-9]$)": Lexer.INTLIT,
-            '^[1-9][_0-9]*(\.)?(_)*[_0-9]*[e|_0-9](_)*(-|\+)?[_0-9]*[0-9]$': Lexer.FLOATLIT,
-            'print|bool|else|false|if|true|float|int|while': Lexer.KEYWORD,
+            '^[1-9][_0-9]*(\.)?(_)*[_0-9]*[e|_0-9](-|\+)?[_0-9]*[0-9]$': Lexer.FLOATLIT,
+            'print|bool|else|false|if|true|float|int|char|while|main': Lexer.KEYWORD,
             '^[_a-zA-Z][_a-zA-Z0-9]*': Lexer.ID,
             '(^\".+\")|(^\'.+\')': Lexer.STRINGLIT,
             '\|\|': Lexer.OR,
@@ -123,23 +122,34 @@ class Lexer:
             tokens = (t for t in split_patt.split(line) if t)
             for t in tokens:
                 matched = 0
-                if re.match('\"|\'', t) and in_something == 0:
+                # if tokens are in between quotes, they are merged and yielded as 1 string object
+                if re.match('\"', t) and in_something == 0:
                     in_something = 1
                     temp = ""
-                elif not re.match('\"|\'', t) and in_something == 1:
-                    temp = temp + t
-                elif re.match('\"|\'', t) and in_something == 1:
+                elif re.match('\'', t) and in_something == 0:
+                    in_something = 2
+                    temp = ""
+                elif re.match(r'(?<!(\\))\"', t) and in_something == 1:
                     in_something = 0
                     yield (Lexer.STRINGLIT, temp, line_num)
-                elif in_something == 2:
+                elif re.match(r'(?<!(\\))\'', t) and in_something == 2:
+                    in_something = 0
+                    yield (Lexer.STRINGLIT, temp, line_num)
+                elif (in_something == 1 or in_something == 2):
+                    temp = temp + t
+
+                # if tokens are in a multi-line comment they are ignored until the */ is found
+                elif in_something == 3:
                     if re.match('\*/', t):
                         in_something = 0
                         continue
                     else:
                         continue
                 else:
+                    # ignore empty spaces if not in a string
                     if re.match('\s', t):
                         continue
+                    # go through all tokens regexes to find a match
                     for i in tokenDict.keys():
                         if re.match(i, t):
                             yield (tokenDict[i], t, line_num)
@@ -149,10 +159,10 @@ class Lexer:
                         if re.match('//', t):
                             break
                         elif re.match('/\*', t):
-                            in_something = 2
+                            in_something = 3
                         else:
                             yield ("ILLEGAL", t, line_num)
-            if in_something == 1:
+            if in_something == 1 or in_something == 2:
                 in_something = 0
                 yield ("ILLEGAL", "[MISSING \"]", line_num)
 
@@ -169,17 +179,21 @@ class SLUCLexicalError(Exception):
 
 if __name__ == "__main__":
 
-    lex = Lexer("lexertest.c")
+    import sys
+
+    filename = sys.argv[-1]
+
+    lex = Lexer(filename)
 
     g = lex.token_generator()
 
-    print('{:<30}{:<50}{:<12}'.format("Token", "Name", "Line Number"))
+    print('{:<30}{:<65}{:<12}'.format("Token", "Name", "Line Number"))
     print("-" * 70)
 
     while True:
         try:
             temp = next(g)
-            print('{:<30}{:<50}{:<12}'.format(temp[0], temp[1], temp[2]))
+            print('{:<30}{:<65}{:<12}'.format(temp[0], temp[1], temp[2]))
         except StopIteration:
             print("Done")
             break
