@@ -2,6 +2,9 @@ import sys
 from typing import Generator, Tuple
 import re
 
+"""
+Raiddy, Victoria, and Conner
+"""
 
 class Lexer:
     # class variables
