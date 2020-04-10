@@ -25,7 +25,9 @@
 
   	|| %  - * +
 
+/*
 
+*/
 
   	// illegal tokens below
 

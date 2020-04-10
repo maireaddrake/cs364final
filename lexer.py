@@ -27,6 +27,8 @@ class Lexer:
     LTE = "less than or equal"
     GT = "greater than"
     GTE = "greater than or equal"
+    BLS = "binary left shift"
+    BRS = "binary right shift"
     ASSIGN = "assignment"
     PLUS = "plus"
     MINUS = "minus"
@@ -61,26 +63,31 @@ class Lexer:
 
         split_patt = re.compile(
             r"""            # Split on
-                (\+) |      # plus and capture (minus is not special unless in [])
-                (-) |      # minus and capture
+                ((?<!(e))\+) |      # plus and capture (minus is not special unless in [])
+                ((?<!(e))-) |      # minus and capture
                 (\*)(?!(\/)) |      # multiply and capture
                 (\/)(?!(\/|\*)) |      # divide and capture (if not followed by another / or *)
                 (//) |      # comment indicator and capture
                 (/\*) |     # multiline comment beginning
                 (\*/) |     # multiline comment ending
-                \s   |      # whitespace
+                
+                (\s)   |      # whitespace
                 (\{) |      # left brace and capture
                 (\}) |      # right brace and capture
                 (\[) |      # left bracket and capture
                 (\]) |      # right bracket and capture
                 (\() |      # left paren and capture
                 (\)) |       # right paren and capture
-                (\<)(?!(\=)) |   # less than and capture (if not followed by =)
+                (\<)(?!(\=|\<)) |   # less than and capture (if not followed by =)
                 (\<\=) |
-                (\>)(?!(\=)) |   # greater than and capture (if not followed by =)
+                (\>)(?!(\=|\>)) |   # greater than and capture (if not followed by =)
                 (\>\=) |
+                (\<\<) |    # binary left shift and capture
+                (\>\>) |    # binary right shift and capture
                 (,)  |
                 (;)  |
+                (\") |
+                (\') |
                 (:)
             """,
             re.VERBOSE
@@ -90,15 +97,17 @@ class Lexer:
             "([0-9][_0-9]*[0-9]$|[0-9]$)": Lexer.INTLIT,
             '^[1-9][_0-9]*(\.)?(_)*[_0-9]*[e|_0-9](-|\+)?[_0-9]*[0-9]$': Lexer.FLOATLIT,
             '^[_a-zA-Z][_a-zA-Z0-9]*': Lexer.ID,
-            '^\"|\'.+\"|\'': Lexer.STRINGLIT,
+            '(^\".+\")|(^\'.+\')': Lexer.STRINGLIT,
             '\|\|': Lexer.OR,
             '&&': Lexer.AND,
             '==': Lexer.EQ,
             '\!\=': Lexer.NEQ,
             '\<=': Lexer.LTE,
-            '\<': Lexer.LT,
+            '\<(?!\=|\<)': Lexer.LT,
             '\>\=': Lexer.GTE,
-            '\>': Lexer.GT,
+            '\>(?!\=|\>)': Lexer.GT,
+            '\<\<': Lexer.BLS,
+            '\>\>': Lexer.BRS,
             '=': Lexer.ASSIGN,
             '\+': Lexer.PLUS,
             '-': Lexer.MINUS,
@@ -117,19 +126,29 @@ class Lexer:
         }
 
         line_num = 0
-        in_comment = 0
+        in_something = 0
         for line in self.f:
             line_num += 1
             tokens = (t for t in split_patt.split(line) if t)
             for t in tokens:
                 matched = 0
-                if in_comment == 2:
+                if re.match('\"|\'', t) and in_something == 0:
+                    in_something = 1
+                    temp = ""
+                elif not re.match('\"|\'', t) and in_something == 1:
+                    temp = temp + t
+                elif re.match('\"|\'', t) and in_something == 1:
+                    in_something = 0
+                    yield (Lexer.STRINGLIT, temp, line_num)
+                elif in_something == 2:
                     if re.match('\*/', t):
-                        in_comment = 0
+                        in_something = 0
                         continue
                     else:
                         continue
                 else:
+                    if re.match('\s', t):
+                        continue
                     for i in tokenDict.keys():
                         if re.match(i, t):
                             yield (tokenDict[i], t, line_num)
@@ -137,12 +156,14 @@ class Lexer:
                             break
                     if matched == 0:
                         if re.match('//', t):
-                            in_comment = 1
                             break
                         elif re.match('/\*', t):
-                            in_comment = 2
+                            in_something = 2
                         else:
-                            raise SLUCLexicalError("Error: Illegal Identifier {0} on line {1}".format(t, line_num))
+                            yield ("ILLEGAL", t, line_num)
+            if in_something == 1:
+                in_something = 0
+                yield ("ILLEGAL", "[MISSING \"]", line_num)
 
 
 # create our own exception by inheriting from python's exception
@@ -161,13 +182,13 @@ if __name__ == "__main__":
 
     g = lex.token_generator()
 
-    print('{:<30}{:<30}{:<12}'.format("Token", "Name", "Line Number"))
+    print('{:<30}{:<50}{:<12}'.format("Token", "Name", "Line Number"))
     print("-"*70)
 
     while True:
         try:
             temp = next(g)
-            print('{:<30}{:<30}{:<12}'.format(temp[0], temp[1], temp[2]))
+            print('{:<30}{:<50}{:<12}'.format(temp[0], temp[1], temp[2]))
         except StopIteration:
             print("Done")
             break
