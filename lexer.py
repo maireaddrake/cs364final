@@ -2,16 +2,6 @@ import sys
 from typing import Generator, Tuple
 import re
 
-#  """\n$1\n""" - replacement text bos where $1 represents the captured value
-
-"""
-current problem: 
-    number like 1.23__e-1_1_ can not be ID (because it starts with a digit)
-    can not recognize a comment properly
-    numbers in token part instead of token names
-"""
-
-
 class Lexer:
     # class variables
     INTLIT = "Integer"  # codes for the "kind" of value
@@ -55,6 +45,7 @@ class Lexer:
             print("Exiting")
             sys.exit(1)  # can't go on
 
+
     def token_generator(self) -> Generator[Tuple[int, str], None, None]:
         """
         Returns the tokens of the language
@@ -62,8 +53,8 @@ class Lexer:
 
         split_patt = re.compile(
             r"""            # Split on
-                (((?<!(e))\+|(?<!(_)))\+) |      # plus and capture (minus is not special unless in [])
-                (((?<!(e))-|(?<!(_)))-) |      # minus and capture
+                ((?<!(e|_))\+) |      # plus and capture (minus is not special unless in [])
+                ((?<!(e|_))-) |      # minus and capture
                 (\*)(?!(\/)) |      # multiply and capture
                 (\/)(?!(\/|\*)) |      # divide and capture (if not followed by another / or *)
                 (//) |      # comment indicator and capture
@@ -95,6 +86,7 @@ class Lexer:
         tokenDict = {
             "([0-9][_0-9]*[0-9]$|[0-9]$)": Lexer.INTLIT,
             '^[1-9][_0-9]*(\.)?(_)*[_0-9]*[e|_0-9](_)*(-|\+)?[_0-9]*[0-9]$': Lexer.FLOATLIT,
+            'print|bool|else|false|if|true|float|int|while': Lexer.KEYWORD,
             '^[_a-zA-Z][_a-zA-Z0-9]*': Lexer.ID,
             '(^\".+\")|(^\'.+\')': Lexer.STRINGLIT,
             '\|\|': Lexer.OR,
