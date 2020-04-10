@@ -38,6 +38,8 @@ class Lexer:
     COMMA = "comma"
     LBRACE = "Left brace"
     RBRACE = "Right brace"
+    LBRACKET = "Left bracket"
+    RBRACKET = "Right bracket"
     LPAREN = "Left paren"
     RPAREN = "Right paren"
 
@@ -61,13 +63,16 @@ class Lexer:
             r"""            # Split on
                 (\+) |      # plus and capture (minus is not special unless in [])
                 (-) |      # minus and capture
-                (\*) |      # multiply and capture
+                (\*)(?!(\/)) |      # multiply and capture
                 (\/)(?!(\/|\*)) |      # divide and capture (if not followed by another / or *)
                 (//) |      # comment indicator and capture
-                (/\*) |     # multiline comment indicator
+                (/\*) |     # multiline comment beginning
+                (\*/) |     # multiline comment ending
                 \s   |      # whitespace
                 (\{) |      # left brace and capture
                 (\}) |      # right brace and capture
+                (\[) |      # left bracket and capture
+                (\]) |      # right bracket and capture
                 (\() |      # left paren and capture
                 (\)) |       # right paren and capture
                 (\<)(?!(\=)) |   # less than and capture (if not followed by =)
@@ -97,14 +102,16 @@ class Lexer:
             '=': Lexer.ASSIGN,
             '\+': Lexer.PLUS,
             '-': Lexer.MINUS,
-            '\*': Lexer.MULT,
-            '(\/)(?!(\/|\*))': Lexer.DIV,
+            '\*(?!\/)': Lexer.MULT,
+            '\/(?!\/|\*)': Lexer.DIV,
             '%': Lexer.MOD,
             '!': Lexer.FACT,
             ';': Lexer.SEMI,
             '\,': Lexer.COMMA,
             '\{': Lexer.LBRACE,
             '\}': Lexer.RBRACE,
+            '\[': Lexer.LBRACKET,
+            '\]': Lexer.RBRACKET,
             '\(': Lexer.LPAREN,
             '\)': Lexer.RPAREN
         }
@@ -112,15 +119,17 @@ class Lexer:
         line_num = 0
         in_comment = 0
         for line in self.f:
-            if in_comment == 1:
-                line_num += 1
-                in_comment = 0
-                continue
-            else:
-                line_num += 1
-                tokens = (t for t in split_patt.split(line) if t)
-                for t in tokens:
-                    matched = 0
+            line_num += 1
+            tokens = (t for t in split_patt.split(line) if t)
+            for t in tokens:
+                matched = 0
+                if in_comment == 2:
+                    if re.match('\*/', t):
+                        in_comment = 0
+                        continue
+                    else:
+                        continue
+                else:
                     for i in tokenDict.keys():
                         if re.match(i, t):
                             yield (tokenDict[i], t, line_num)
@@ -130,6 +139,8 @@ class Lexer:
                         if re.match('//', t):
                             in_comment = 1
                             break
+                        elif re.match('/\*', t):
+                            in_comment = 2
                         else:
                             raise SLUCLexicalError("Error: Illegal Identifier {0} on line {1}".format(t, line_num))
 
@@ -146,7 +157,7 @@ class SLUCLexicalError(Exception):
 
 if __name__ == "__main__":
 
-    lex = Lexer("lexertest.c")
+    lex = Lexer("ed'stest.c")
 
     g = lex.token_generator()
 
