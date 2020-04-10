@@ -185,7 +185,7 @@ if __name__ == "__main__":
 
     filename = sys.argv[-1]
 
-    lex = Lexer("ed'stest.c")
+    lex = Lexer(filename)
 
     g = lex.token_generator()
 
