@@ -62,8 +62,8 @@ class Lexer:
 
         split_patt = re.compile(
             r"""            # Split on
-                ((?<!(e))\+) |      # plus and capture (minus is not special unless in [])
-                ((?<!(e))-) |      # minus and capture
+                (((?<!(e))\+|(?<!(_)))\+) |      # plus and capture (minus is not special unless in [])
+                (((?<!(e))-|(?<!(_)))-) |      # minus and capture
                 (\*)(?!(\/)) |      # multiply and capture
                 (\/)(?!(\/|\*)) |      # divide and capture (if not followed by another / or *)
                 (//) |      # comment indicator and capture
@@ -94,7 +94,7 @@ class Lexer:
 
         tokenDict = {
             "([0-9][_0-9]*[0-9]$|[0-9]$)": Lexer.INTLIT,
-            '^[1-9][_0-9]*(\.)?(_)*[_0-9]*[e|_0-9](-|\+)?[_0-9]*[0-9]$': Lexer.FLOATLIT,
+            '^[1-9][_0-9]*(\.)?(_)*[_0-9]*[e|_0-9](_)*(-|\+)?[_0-9]*[0-9]$': Lexer.FLOATLIT,
             '^[_a-zA-Z][_a-zA-Z0-9]*': Lexer.ID,
             '(^\".+\")|(^\'.+\')': Lexer.STRINGLIT,
             '\|\|': Lexer.OR,
@@ -177,7 +177,7 @@ class SLUCLexicalError(Exception):
 
 if __name__ == "__main__":
 
-    lex = Lexer("ed'stest.c")
+    lex = Lexer("lexertest.c")
 
     g = lex.token_generator()
 
