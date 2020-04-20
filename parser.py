@@ -17,6 +17,18 @@ class Parser:
         Program -> {FunctionDef}            (while loop)
         """
 
+    def functiondef(self):
+        pass
+
+    def params(self):
+        pass
+
+    def declaration(self):
+        pass
+
+    def statement(self):
+        pass
+
     def conjunction(self):
         pass
 
@@ -33,10 +45,11 @@ class Parser:
         left = self.term()
 
         while self.currtok[0] in {Lexer.PLUS, Lexer.MINUS}:
+            op = self.currtok[1]
             self.currtok = next(self.tg)  # advance to the next token because
             # we matched a plus
             right = self.term()
-            left = BinaryExpr(left, , right)
+            left = BinaryExpr(left, op, right)
 
         return left
 
@@ -46,7 +59,7 @@ class Parser:
         """
         left = self.fact()
 
-        while self.currtok[0] in {Lexer.MULT}:
+        while self.currtok[0] in {Lexer.MULT, Lexer.DIV}:
             self.currtok = next(self.tg)
             right = self.fact()
             left = BinaryExpr(left, "*", right)
@@ -88,7 +101,7 @@ class Parser:
 
         if self.currtok[0] == Lexer.FLOATLIT:
             tmp = self.currtok
-            self.currtok = next.(self.tg)
+            self.currtok = next(self.tg)
             return FloatLitExpr(tmp[1])
 
         # parse a parenthesized expression

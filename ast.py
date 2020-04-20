@@ -4,9 +4,13 @@ SLU-C Abstract Syntax Trees
 An abstract syntax tree (AST) is a data structure that represents the
 concrete (text)
 """
-from typing import Sequence, Union
+from typing import Sequence, Union, Optional
 
 # use a class hierarchy to represent types
+
+
+class Type:
+    pass
 
 
 class FunctionDef:
@@ -21,6 +25,25 @@ class FunctionDef:
         pass
 
 
+class Expr:
+    pass
+
+
+class Stmt:
+    pass
+
+class IfStmt(Stmt):
+    def __init__(self, cond: Expr, truepart: Stmt, falsepart: Optional[Stmt]):
+        pass
+
+    def eval(self, env):
+
+        if self.cond.eval():
+            self.truepart.eval(env)
+        elif self.flasepart is not None:
+            self.falsepart.eval(env)
+
+
 class Declaration:
     pass
 
@@ -29,10 +52,6 @@ class Program:
 
     def __init__(self, funcs: Sequence[FunctionDef]):
         self.funcs = funcs
-
-
-class Expr:
-    pass
 
 
 class BinaryExpr(Expr):
@@ -77,6 +96,10 @@ class IDExpr(Expr):
         # env is a dictionary
         pass
 
+    def typeof(self, decls) -> Type:
+        # lookup the value of self.id Look up where?
+        return Type
+
 
 class IntLitExpr(Expr):
 
@@ -91,6 +114,13 @@ class IntLitExpr(Expr):
 
     def eval(self):
         return self.intlit  # base case
+
+    #def typeof(self) -> Type:
+    # representing SLU-C types using Python types
+    def typeof(self) -> type:
+
+        # return IntegerType
+        return int
 
 
 class FloatLitExpr(Expr):
