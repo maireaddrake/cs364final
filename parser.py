@@ -4,6 +4,8 @@ from ast import Expr, BinaryExpr, UnaryOp, IDExpr, IntLitExpr, FloatLitExpr
 
 class Parser:
 
+    variableDict = {}
+
     def __init__(self, fn: str):
 
         self.lex = Lexer(fn)
@@ -29,14 +31,90 @@ class Parser:
     def statement(self):
         pass
 
-    def conjunction(self):
+    def returnstmt(self):
         pass
+
+    def block(self):
+        pass
+
+    def assignment(self):
+        pass
+
+    def ifstatement(self):
+        pass
+
+    def whilestatement(self):
+        pass
+
+    def printstmt(self):
+        pass
+
+    def printarg(self):
+        """
+        PrintArg → Expression | stringlit
+        """
+
+
+    def expression(self):
+        """
+        Expression -> Conjunction { || Conjunction }
+        """
+        left = self.conjunction()
+
+        while self.currtok[0] == Lexer.OR:
+            op = self.currtok[1]
+            self.currtok = next(self.tg)  # advance to the next token because
+            # we matched a plus
+            right = self.conjunction()
+            left = BinaryExpr(left, op, right)
+
+        return left
+
+    def conjunction(self):
+        """
+        Conjunction → Equality { && Equality }
+        """
+        left = self.equality()
+
+        while self.currtok[0] == Lexer.AND:
+            op = self.currtok[1]
+            self.currtok = next(self.tg)  # advance to the next token because
+            # we matched a plus
+            right = self.equality()
+            left = BinaryExpr(left, op, right)
+
+        return left
 
     def equality(self):
-        pass
+        """
+        Equality → Relation [ EquOp Relation ]
+        """
+        left = self.relation()
 
-    def relation(self):
-        pass
+        if self.currtok[0] in {Lexer.EQ, Lexer.NEQ}:
+            op = self.currtok[1]
+            self.currtok = next(self.tg)  # advance to the next token because
+            # we matched a plus
+            right = self.relation()
+            left = BinaryExpr(left, op, right)
+
+        return left
+
+    def relation(self) -> Expr:
+        """
+        Relation → Addition [ RelOp Addition ]
+        """
+        left = self.addition()
+
+        if self.currtok[0] in {Lexer.GT, Lexer.GTE, Lexer.LT, Lexer.LTE}:
+            op = self.currtok[1]
+            self.currtok = next(self.tg)  # advance to the next token because
+            # we matched a plus
+            right = self.addition()
+            left = BinaryExpr(left, op, right)
+
+        return left
+
 
     def addition(self) -> Expr:
         """
@@ -59,10 +137,11 @@ class Parser:
         """
         left = self.fact()
 
-        while self.currtok[0] in {Lexer.MULT, Lexer.DIV}:
+        while self.currtok[0] in {Lexer.MULT, Lexer.DIV, Lexer.MOD}:
+            op = self.currtok[1]
             self.currtok = next(self.tg)
             right = self.fact()
-            left = BinaryExpr(left, "*", right)
+            left = BinaryExpr(left, op, right)
 
         return left
 
@@ -72,10 +151,11 @@ class Parser:
         """
 
         # only advance to the next token on a successful match
-        if self.currtok[0] == Lexer.MINUS:
+        if self.currtok[0] in {Lexer.MINUS, Lexer.FACT}:
+            op = self.currtok[1]
             self.currtok = next(self.tg)
             tree = self.primary()
-            return UnaryOp(tree, )
+            return UnaryOp(tree, op)
 
         return self.primary()
 
@@ -84,14 +164,14 @@ class Parser:
         Primary -> ID | INTLIT | (Expr)
         """
 
-        # TODO Add real literals
-
         # parse an ID
         if self.currtok[0] == Lexer.ID:  # using ID in expression
             tmp = self.currtok
-            # TODO check to make sure ID is declared (in the dictionary)
-            self.currtok = next(self.tg)
-            return IDExpr(tmp[1])
+            if self.currtok[1] in self.variableDict:
+                self.currtok = next(self.tg)
+                return IDExpr(tmp[1])
+            else:
+                raise("Undefined variable {0} on line {1}".format(tmp[1], tmp[2]))
 
         # parse an integer literal
         if self.currtok[0] == Lexer.INTLIT:
@@ -107,13 +187,13 @@ class Parser:
         # parse a parenthesized expression
         if self.currtok[0] == Lexer.LPAREN:
             self.currtok = next(self.tg)
-            tree = self.addition()  # TODO keeps changing
+            tree = self.expression()
             if self.currtok[0] == Lexer.RPAREN:
                 self.currtok = next(self.tg)
                 return tree
             else:
                 # use the line number from your token object
-                raise SLUCSyntaxError("Missing right paren on line {0}".format(-1))
+                raise SLUCSyntaxError("Missing right paren on line {0}".format(self.currtok[2]))
 
         # if we get here we have a problem
         raise SLUCSyntaxError("ERROR: Unexpected token on line {0}".format(self.currtok[1]))
