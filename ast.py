@@ -64,7 +64,6 @@ class FunctionDef:
         st = st + "}"
         return st
 
-
 class IfStmt(Stmt):
     def __init__(self, cond: Expr, truepart: Stmt, falsepart: Optional[Stmt]):
         self.cond = cond
@@ -73,6 +72,35 @@ class IfStmt(Stmt):
 
     def __str__(self):
         return "if "
+
+    def eval(self, env):
+
+        if self.cond.eval():
+            self.truepart.eval(env)
+        elif self.falsepart is not None:
+            self.falsepart.eval(env)
+
+class WhileStmt(Stmt):
+    def __init__(self, cond: Expr, inLoop: Stmt):
+        self.cond = cond
+        self.inLoop = inLoop
+
+    def eval(self, env):
+        while self.cond.eval():
+            self.inLoop.eval(env)
+
+class PrintStmt(Stmt):
+    def __init__(self, pArg: Stmt, pArgList: Optional[Stmt]):
+        self.pArg = pArg
+        self.pArgList = pArgList
+
+    def __str__(self):
+        pri = "print({0}" .format(str(self.pArg))
+        if len(self.pArgList) != 0:
+            for i in self.pArgList:
+                pri = pri + ", " + i
+        pri  = pri + ")"
+        return pri
 
 
 class Program:
