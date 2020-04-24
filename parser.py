@@ -1,5 +1,5 @@
 from lexer import Lexer
-from ast import Expr, BinaryExpr, UnaryOp, IDExpr, IntLitExpr, FloatLitExpr
+from ast import *
 
 
 class Parser:
@@ -41,19 +41,88 @@ class Parser:
         pass
 
     def ifstatement(self):
-        pass
+        """
+        IfStatement → if ( Expression ) Statement [ else Statement ]
+        """
+
+        stmtList = []
+        if self.currtok[0] == Lexer.KEYWORD and self.currtok[1] == "if":
+            self.currtok = next(self.tg)
+            if self.currtok[0] == Lexer.LPAREN:
+                self.currtok = next(self.tg)
+                ifCond = self.expression()
+                if self.currtok[0] == Lexer.RPAREN:
+                    self.currtok = next(self.tg)
+                    firstStmt = self.statement()
+                    while self.currtok[0] == Lexer.KEYWORD and self.currtok[1] == "else":
+                        self.currtok = next(self.tg)
+                        elseStmt = self.statement()
+                        stmtList.append(elseStmt)
+                    temp = IfStmt(ifCond, firstStmt, stmtList)
+                    return temp
+                else:
+                    # use the line number from your token object
+                    raise SLUCSyntaxError("Missing right paren on line {0}".format(self.currtok[2]))
+
 
     def whilestatement(self):
-        pass
+        """
+        WhileStatement → while ( Expression ) Statement
+        """
+
+        if self.currtok[0] == Lexer.KEYWORD and self.currtok[1] == "while":
+            self.currtok = next(self.tg)
+            if self.currtok[0] == Lexer.LPAREN:
+                self.currtok = next(self.tg)
+                left = self.expression()
+                if self.currtok[0] == Lexer.RPAREN:
+                    self.currtok = next(self.tg)
+                    right = self.statement()
+                    temp = WhileStmt(left, right)
+                    return temp
+                else:
+                    # use the line number from your token object
+                    raise SLUCSyntaxError("Missing right paren on line {0}".format(self.currtok[2]))
 
     def printstmt(self):
-        pass
+        """
+        PrintStmt → print( PrintArg { , PrintArg })
+        """
+        printS = []
+
+        if self.currtok[0] == Lexer.KEYWORD and self.currtok[1] == "print":
+            self.currtok = next(self.tg)
+            if self.currtok[0] == Lexer.LPAREN:
+                self.currtok = next(self.tg)
+                firstPrint = self.printarg()
+                while self.currtok[0] == ",":
+                    self.currtok = next(self.tg)
+                    otherPrint = self.printarg()
+                    printS.append(otherPrint)
+                if self.currtok[0] == Lexer.RPAREN:
+                    self.currtok = next(self.tg)
+                    temp = PrintStmt(firstPrint, printS)
+                    return temp
+                else:
+                    # use the line number from your token object
+                    raise SLUCSyntaxError("Missing right paren on line {0}".format(self.currtok[2]))
+
 
     def printarg(self):
         """
         PrintArg → Expression | stringlit
         """
 
+        # parse the Expression
+        if self.currtok[0] == self.expression():
+            return self.expression()
+        # parse the stringlit
+        if self.currtok[0] == Lexer.STRINGLIT:
+            tmp = self.currtok
+            self.currtok = next(self.tg)
+            return StringLitExpr(tmp[1])
+
+        raise SLUCSyntaxError("ERROR: Unexpected token on line {0}".format(self.currtok[1]))
 
     def expression(self):
         """
@@ -63,8 +132,7 @@ class Parser:
 
         while self.currtok[0] == Lexer.OR:
             op = self.currtok[1]
-            self.currtok = next(self.tg)  # advance to the next token because
-            # we matched a plus
+            self.currtok = next(self.tg)
             right = self.conjunction()
             left = BinaryExpr(left, op, right)
 
@@ -78,8 +146,7 @@ class Parser:
 
         while self.currtok[0] == Lexer.AND:
             op = self.currtok[1]
-            self.currtok = next(self.tg)  # advance to the next token because
-            # we matched a plus
+            self.currtok = next(self.tg)
             right = self.equality()
             left = BinaryExpr(left, op, right)
 
@@ -93,8 +160,7 @@ class Parser:
 
         if self.currtok[0] in {Lexer.EQ, Lexer.NEQ}:
             op = self.currtok[1]
-            self.currtok = next(self.tg)  # advance to the next token because
-            # we matched a plus
+            self.currtok = next(self.tg)
             right = self.relation()
             left = BinaryExpr(left, op, right)
 
@@ -108,8 +174,7 @@ class Parser:
 
         if self.currtok[0] in {Lexer.GT, Lexer.GTE, Lexer.LT, Lexer.LTE}:
             op = self.currtok[1]
-            self.currtok = next(self.tg)  # advance to the next token because
-            # we matched a plus
+            self.currtok = next(self.tg)
             right = self.addition()
             left = BinaryExpr(left, op, right)
 

@@ -34,15 +34,38 @@ class Stmt:
 
 class IfStmt(Stmt):
     def __init__(self, cond: Expr, truepart: Stmt, falsepart: Optional[Stmt]):
-        pass
+        self.cond = cond
+        self.truepart = truepart
+        self.falsepart = falsepart
 
     def eval(self, env):
 
         if self.cond.eval():
             self.truepart.eval(env)
-        elif self.flasepart is not None:
+        elif self.falsepart is not None:
             self.falsepart.eval(env)
 
+class WhileStmt(Stmt):
+    def __init__(self, cond: Expr, inLoop: Stmt):
+        self.cond = cond
+        self.inLoop = inLoop
+
+    def eval(self, env):
+        while self.cond.eval():
+            self.inLoop.eval(env)
+
+class PrintStmt(Stmt):
+    def __init__(self, pArg: Stmt, pArgList: Optional[Stmt]):
+        self.pArg = pArg
+        self.pArgList = pArgList
+
+    def __str__(self):
+        pri = "print({0}" .format(str(self.pArg))
+        if len(self.pArgList) != 0:
+            for i in self.pArgList:
+                pri = pri + ", " + i
+        pri  = pri + ")"
+        return pri
 
 class Declaration:
     pass
@@ -62,7 +85,7 @@ class BinaryExpr(Expr):
         self.op = op
 
     def __str__(self):
-        return "{0} {1} {2}".format(str(self.left), self.op, str(self.right))
+        return "({0} {1} {2})".format(str(self.left), self.op, str(self.right))
 
 
 class UnaryOp(Expr):
@@ -137,11 +160,25 @@ class FloatLitExpr(Expr):
     def eval(self):
         return self.floatlit  # base case
 
+class StringLitExpr(Expr):
+
+    def __init__(self, stringlit: str):
+        self.stringlit = stringlit
+
+    def __str__(self):
+        return str(self.stringlit)
+
+    def scheme(self):
+        return str(self.stringlit)
+
+    def eval(self):
+        return self.stringlit
+
 
 if __name__ == '__main__':
     """
     Represent (a + b) + (c * d)
     """
-    expr = AddExpr(AddExpr(IDExpr('a'), IDExpr('b')),
-                    MultExpr(IDExpr('c'), IDExpr('d')))
+    expr = BinaryExpr(BinaryExpr(IDExpr('a'), "+", IDExpr('b')), "+",
+                    BinaryExpr(IDExpr('c'), "*", IDExpr('d')))
     print(expr)
