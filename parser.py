@@ -234,12 +234,12 @@ class Parser:
         if self.currtok[0] == self.expression():
             return self.expression()
         # parse the stringlit
-        if self.currtok[0] == Lexer.STRINGLIT:
+        elif self.currtok[0] == Lexer.STRINGLIT:
             tmp = self.currtok
             self.currtok = next(self.tg)
             return StringLitExpr(tmp[1])
 
-        raise SLUCSyntaxError("ERROR: Unexpected token on line {0}".format(self.currtok[1]))
+        raise SLUCSyntaxError("ERROR: Unexpected token on line {0}".format(self.currtok[2]))
 
     def expression(self) -> Expr:
         """
