@@ -93,6 +93,10 @@ class Parser:
         self.currtok = next(self.tg)
         id = self.currtok[1]
         self.currtok = next(self.tg)
+        if id in self.variableDict:
+            raise SLUCSyntaxError("Variable {0} declared twice on line {1}".format(id, self.currtok[2]))
+        else:
+            self.variableDict[id] = t
         if self.currtok[0] == Lexer.SEMI:
             temp = Declaration(t, id)
             id = self.currtok[1]
@@ -130,21 +134,13 @@ class Parser:
             else:
                 raise SLUCSyntaxError("Undefined variable {0} on line {1}".format(self.currtok[1], self.currtok[2]))
         elif self.currtok[0] == Lexer.KEYWORD and self.currtok[1] == "if":
-            temp = self.ifstatement()
-            self.currtok = next(self.tg)
-            return temp
+            return self.ifstatement()
         elif self.currtok[0] == Lexer.KEYWORD and self.currtok[1] == "while":
-            temp = self.whilestatement()
-            self.currtok = next(self.tg)
-            return temp
+            return self.whilestatement()
         elif self.currtok[0] == Lexer.KEYWORD and self.currtok[1] == "print":
-            temp = self.printstmt()
-            self.currtok = next(self.tg)
-            return temp
+            return self.printstmt()
         elif self.currtok[0] == Lexer.KEYWORD and self.currtok[1] == "return":
-            temp = self.returnstmt()
-            self.currtok = next(self.tg)
-            return temp
+            return self.returnstmt()
         else:
             return None
 
@@ -158,28 +154,27 @@ class Parser:
         pass
 
     def ifstatement(self):
-    """
-    IfStatement → if ( Expression ) Statement [ else Statement ]
-    """
-
-    stmtList = []
-    if self.currtok[0] == Lexer.KEYWORD and self.currtok[1] == "if":
-        self.currtok = next(self.tg)
-        if self.currtok[0] == Lexer.LPAREN:
+        """
+        IfStatement → if ( Expression ) Statement [ else Statement ]
+        """
+        stmtList = []
+        if self.currtok[0] == Lexer.KEYWORD and self.currtok[1] == "if":
             self.currtok = next(self.tg)
-            ifCond = self.expression()
-            if self.currtok[0] == Lexer.RPAREN:
+            if self.currtok[0] == Lexer.LPAREN:
                 self.currtok = next(self.tg)
-                firstStmt = self.statement()
-                while self.currtok[0] == Lexer.KEYWORD and self.currtok[1] == "else":
+                ifCond = self.expression()
+                if self.currtok[0] == Lexer.RPAREN:
                     self.currtok = next(self.tg)
-                    elseStmt = self.statement()
-                    stmtList.append(elseStmt)
-                temp = IfStmt(ifCond, firstStmt, stmtList)
-                return temp
-            else:
-                # use the line number from your token object
-                raise SLUCSyntaxError("Missing right paren on line {0}".format(self.currtok[2]))
+                    firstStmt = self.statement()
+                    while self.currtok[0] == Lexer.KEYWORD and self.currtok[1] == "else":
+                        self.currtok = next(self.tg)
+                        elseStmt = self.statement()
+                        stmtList.append(elseStmt)
+                    temp = IfStmt(ifCond, firstStmt, stmtList)
+                    return temp
+                else:
+                    # use the line number from your token object
+                    raise SLUCSyntaxError("Missing right paren on line {0}".format(self.currtok[2]))
 
 
     def whilestatement(self):
@@ -212,7 +207,7 @@ class Parser:
             if self.currtok[0] == Lexer.LPAREN:
                 self.currtok = next(self.tg)
                 firstPrint = self.printarg()
-                while self.currtok[0] == ",":
+                while self.currtok[0] == Lexer.COMMA:
                     self.currtok = next(self.tg)
                     otherPrint = self.printarg()
                     printS.append(otherPrint)
@@ -224,22 +219,19 @@ class Parser:
                     # use the line number from your token object
                     raise SLUCSyntaxError("Missing right paren on line {0}".format(self.currtok[2]))
 
-
     def printarg(self):
         """
         PrintArg → Expression | stringlit
         """
-
-        # parse the Expression
-        if self.currtok[0] == self.expression():
-            return self.expression()
         # parse the stringlit
-        elif self.currtok[0] == Lexer.STRINGLIT:
+        if self.currtok[0] == Lexer.STRINGLIT:
             tmp = self.currtok
             self.currtok = next(self.tg)
             return StringLitExpr(tmp[1])
-
-        raise SLUCSyntaxError("ERROR: Unexpected token on line {0}".format(self.currtok[2]))
+        # parse the Expression
+        else:
+            return self.expression()
+        # raise SLUCSyntaxError("ERROR: Unexpected token {0} on line {1}".format(self.currtok[1], self.currtok[2]))
 
     def expression(self) -> Expr:
         """
@@ -279,8 +271,7 @@ class Parser:
 
         if self.currtok[0] in {Lexer.EQ, Lexer.NEQ}:
             op = self.currtok[1]
-            self.currtok = next(self.tg)  # advance to the next token because
-            # we matched a plus
+            self.currtok = next(self.tg)
             right = self.relation()
             left = BinaryExpr(left, op, right)
 
@@ -355,7 +346,7 @@ class Parser:
                 self.currtok = next(self.tg)
                 return IDExpr(tmp[1])
             else:
-                raise("Undefined variable {0} on line {1}".format(tmp[1], tmp[2]))
+                raise SLUCSyntaxError("Undefined variable {0} on line {1}".format(tmp[1], tmp[2]))
         elif self.currtok[0] == Lexer.INTLIT:  # parse an integer literal
             tmp = self.currtok
             self.currtok = next(self.tg)
@@ -364,6 +355,10 @@ class Parser:
             tmp = self.currtok
             self.currtok = next(self.tg)
             return FloatLitExpr(tmp[1])
+        elif self.currtok[0] == Lexer.STRINGLIT:  # parse an float literal
+            tmp = self.currtok
+            self.currtok = next(self.tg)
+            return StringLitExpr(tmp[1])
         elif self.currtok[0] == Lexer.LPAREN:  # parse a parenthesized expression
             self.currtok = next(self.tg)
             tree = self.expression()
@@ -375,7 +370,7 @@ class Parser:
                 raise SLUCSyntaxError("Missing right paren on line {0}".format(self.currtok[2]))
 
         # if we get here we have a problem
-        raise SLUCSyntaxError("ERROR: Unexpected token on line {0}".format(self.currtok[2]))
+        raise SLUCSyntaxError("ERROR: Unexpected token {0} on line {1}".format(self.currtok[1], self.currtok[2]))
 
 
 # create our own exception by inheriting from python's exception

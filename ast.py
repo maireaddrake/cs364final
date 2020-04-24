@@ -65,13 +65,16 @@ class FunctionDef:
         return st
 
 class IfStmt(Stmt):
-    def __init__(self, cond: Expr, truepart: Stmt, falsepart: Optional[Stmt]):
+    def __init__(self, cond: Expr, truepart: Stmt, falsepart: [Stmt]):
         self.cond = cond
         self.truepart = truepart
         self.falsepart = falsepart
 
     def __str__(self):
-        return "if "
+        if len(self.falsepart) == 0:
+            return "if ( {0} ) {1}".format(str(self.cond), str(self.truepart))
+        else:
+            return "if ( {0} ) {1} else {2}".format(str(self.cond), str(self.truepart), str(self.falsepart))
 
     def eval(self, env):
 
@@ -84,6 +87,9 @@ class WhileStmt(Stmt):
     def __init__(self, cond: Expr, inLoop: Stmt):
         self.cond = cond
         self.inLoop = inLoop
+
+    def __str__(self):
+        return "while ( {0} ) {{ {1} }}".format(str(self.cond), str(self.inLoop))
 
     def eval(self, env):
         while self.cond.eval():
@@ -168,6 +174,19 @@ class IntLitExpr(Expr):
 
         # return IntegerType
         return int
+
+
+class StringLitExpr(Expr):
+
+    def __init__(self, strlit: str):
+        self.strlit = strlit
+
+    def __str__(self):
+        return "\"" + self.strlit + "\""
+
+    def typeof(self) -> type:
+        # return IntegerType
+        return str
 
 
 class FloatLitExpr(Expr):
