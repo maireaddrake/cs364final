@@ -105,8 +105,14 @@ class PrintStmt(Stmt):
         if len(self.pArgList) != 0:
             for i in self.pArgList:
                 pri = pri + ", " + i
-        pri  = pri + ")"
+        pri  = pri + ");"
         return pri
+
+class ReturnStmt(Stmt):
+    def __init__(self, exp:Expr):
+        self.exp = exp
+    def __str__(self):
+        return "return {0};" .format(str(self.exp))
 
 
 class Program:

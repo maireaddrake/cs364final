@@ -1,5 +1,5 @@
 from lexer import Lexer
-from ast import *
+from ast import Expr, BinaryExpr, UnaryOp, IDExpr, IntLitExpr, FloatLitExpr
 
 
 class Parser:
@@ -10,6 +10,8 @@ class Parser:
 
         self.lex = Lexer(fn)
         self.tg = self.lex.token_generator()
+        self.currtok = next(self.tg)
+
 
     # top level function that will be called
     def program(self):
@@ -145,13 +147,38 @@ class Parser:
             return None
 
     def returnstmt(self):
-        pass
+        """
+        ReturnStmt → return Expression ;
+        """
+        self.currtok = next(self.tg)
+        return ReturnStmt(self.expression())
 
     def block(self):
-        pass
+        """
+        Block → { Statements }
+        """
+        block = []
+        while True:
+            temp = self.statements()
+            if temp is not None:
+                block.append(temp)
+            else:
+                break
+        return block
 
     def assignment(self):
-        pass
+        """
+        Asssignment → ID = Expression ;
+        """
+        t = self.currtok[1]
+        if t in self.variableDict.keys():
+            self.currtok = next(self.tg)
+            if self.currtok == Lexer.ASSIGN:
+                self.currtok = next(self.tg)
+                self.variableDict[t] = self.currtok[1]
+                return BinaryExpr(t, "=", self.currtok)
+        else:
+            raise SLUCSyntaxError("Assignment of an undeclared variable on line {0}".format(self.currtok[2]))
 
     def ifstatement(self):
         """
