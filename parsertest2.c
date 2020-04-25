@@ -1,0 +1,1 @@
+int main() {bool prime; int i; int n; i = 2; n = 1234567; prime = true; while ((prime && (i < (n / 2.0)))) if ( ((n % i) == 0) ) prime = false;i = (i + 1); print((i - 1)) ; }

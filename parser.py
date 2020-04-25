@@ -4,13 +4,12 @@ from ast import *
 
 class Parser:
 
-    variableDict = {}
-    functionDict = {}
-
     def __init__(self, fn: str):
 
         self.lex = Lexer(fn)
         self.tg = self.lex.token_generator()
+        self.variableDict = {}
+        self.functionDict = {}
 
     # top level function that will be called
     def program(self):
@@ -191,7 +190,7 @@ class Parser:
                     temp = self.variableDict[id][0]
                     self.variableDict[id] = (temp, exp)
                     self.currtok = next(self.tg)
-                    return BinaryExpr(IDExpr(id), "=", exp)
+                    return Assignment(IDExpr(id), exp)
                 else:
                     raise SLUCSyntaxError("Missing Semi-colon on line {0}".format(self.currtok[2]))
         else:
@@ -450,3 +449,7 @@ if __name__ == "__main__":
     p = Parser('parsertest.c')
     t = p.program()
     print(t)
+    p2 = Parser('parsertest2.c')
+    t2 = p2.program()
+    print(t2)
+

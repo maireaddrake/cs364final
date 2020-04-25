@@ -58,11 +58,20 @@ class FunctionDef:
     def __str__(self):
         st = "{0} {1}({2}) {{".format(str(self.t), str(self.id), str(self.params))
         for d in self.decls:
-            st = st + str(d)
+            st = st + str(d) + " "
         for s in self.stmts:
-            st = st + str(s)
+            st = st + str(s) + " "
         st = st + "}"
         return st
+
+
+class Assignment(Stmt):
+    def __init__(self, var: Expr, exp: Expr):
+        self.var = var
+        self.exp = exp
+
+    def __str__(self):
+        return "{0} = {1};".format(str(self.var), str(self.exp))
 
 
 class Block(Stmt):
