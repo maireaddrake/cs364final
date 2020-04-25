@@ -12,7 +12,6 @@ class Parser:
         self.lex = Lexer(fn)
         self.tg = self.lex.token_generator()
 
-
     # top level function that will be called
     def program(self):
         """
@@ -37,23 +36,26 @@ class Parser:
         self.currtok = next(self.tg)
         id = self.currtok[1]
         self.currtok = next(self.tg)
-        self.functionDict[id] = (t, None)
-        if self.currtok[0] == Lexer.LPAREN:
-            self.currtok = next(self.tg)
-            params = self.params()
-            if self.currtok[0] == Lexer.RPAREN:
+        if id in self.functionDict:
+            raise SLUCSyntaxError("Function Already Declared")
+        else:
+            self.functionDict[id] = (t, None)
+            if self.currtok[0] == Lexer.LPAREN:
                 self.currtok = next(self.tg)
-            else:
-                raise SLUCSyntaxError("Missing right paren on line {0}".format(self.currtok[2]))
-            if self.currtok[0] == Lexer.LBRACE:
-                self.currtok = next(self.tg)
-                decls = self.declarations()
-                stmts = self.statements()
-                if self.currtok[0] == Lexer.RBRACE:
-                    temp = FunctionDef(t, id, params, decls, stmts)
-                    return temp
+                params = self.params()
+                if self.currtok[0] == Lexer.RPAREN:
+                    self.currtok = next(self.tg)
                 else:
-                    raise SLUCSyntaxError("Missing Right Brace on line {0}".format(self.currtok[2]))
+                    raise SLUCSyntaxError("Missing right paren on line {0}".format(self.currtok[2]))
+                if self.currtok[0] == Lexer.LBRACE:
+                    self.currtok = next(self.tg)
+                    decls = self.declarations()
+                    stmts = self.statements()
+                    if self.currtok[0] == Lexer.RBRACE:
+                        temp = FunctionDef(Type(t), IDExpr(id), params, decls, stmts)
+                        return temp
+                    else:
+                        raise SLUCSyntaxError("Missing Right Brace on line {0}".format(self.currtok[1]))
         raise SLUCSyntaxError("Error")
 
     def params(self) -> Params:
@@ -62,7 +64,6 @@ class Parser:
         """
         params = []
         if self.currtok[0] == Lexer.RPAREN:
-            print("test")
             return Params(params)
         else:
             t = self.currtok[1]
@@ -125,7 +126,9 @@ class Parser:
         Statement → ; | Block | Assignment | IfStatement | WhileStatement | PrintStmt | ReturnStmt
         """
         if self.currtok[0] == Lexer.SEMI:  # semi-colon
-            return self.currtok[1]
+            temp = self.currtok[1]
+            self.currtok = next(self.tg)
+            return temp
         elif self.currtok[0] == Lexer.KEYWORD and self.currtok[1] == "if":
             return self.ifstatement()
         elif self.currtok[0] == Lexer.KEYWORD and self.currtok[1] == "while":
@@ -169,7 +172,7 @@ class Parser:
                 break
         if self.currtok[0] == Lexer.RBRACE:
             self.currtok = next(self.tg)
-            return block
+            return Block(block)
         else:
             raise SLUCSyntaxError("Missing Right Brace on line {0}".format(self.currtok[2]))
 
@@ -178,16 +181,17 @@ class Parser:
         """
         Asssignment → ID = Expression ;
         """
-        t = self.currtok[1]
-        if t in self.variableDict.keys():
+        id = self.currtok[1]
+        if id in self.variableDict.keys():
             self.currtok = next(self.tg)
             if self.currtok[0] == Lexer.ASSIGN:
                 self.currtok = next(self.tg)
                 exp = self.expression()
                 if self.currtok[0] == Lexer.SEMI:
-                    self.variableDict[t][1] = exp
+                    temp = self.variableDict[id][0]
+                    self.variableDict[id] = (temp, exp)
                     self.currtok = next(self.tg)
-                    return BinaryExpr(IDExpr(t), "=", exp)
+                    return BinaryExpr(IDExpr(id), "=", exp)
                 else:
                     raise SLUCSyntaxError("Missing Semi-colon on line {0}".format(self.currtok[2]))
         else:
@@ -382,23 +386,42 @@ class Parser:
         # parse an ID
         if self.currtok[0] == Lexer.ID:  # using ID in expression
             tmp = self.currtok
-            if self.currtok[1] in self.variableDict:
+            if self.currtok[1] in self.variableDict:  # parse variable ID
                 self.currtok = next(self.tg)
                 return IDExpr(tmp[1])
+            elif self.currtok[1] in self.functionDict:  # parse function ID
+                self.currtok = next(self.tg)
+                if self.currtok[0] == Lexer.LPAREN:
+                    self.currtok = next(self.tg)
+                    params = []
+                    params.append(self.currtok[1])
+                    self.currtok = next(self.tg)
+                    while self.currtok[0] == Lexer.COMMA:
+                        self.currtok = next(self.tg)
+                        params.append(self.currtok[1])
+                    if self.currtok[0] == Lexer.RPAREN:
+                        self.currtok = next(self.tg)
+                        return IDExpr(tmp[1])
+                else:
+                    raise SLUCSyntaxError("Invalid Function call")
             else:
                 raise SLUCSyntaxError("Undefined variable {0} on line {1}".format(tmp[1], tmp[2]))
         elif self.currtok[0] == Lexer.INTLIT:  # parse an integer literal
             tmp = self.currtok
             self.currtok = next(self.tg)
-            return IntLitExpr(tmp[1])
+            return LitExpr(tmp[1], int)
         elif self.currtok[0] == Lexer.FLOATLIT:  # parse an float literal
             tmp = self.currtok
             self.currtok = next(self.tg)
-            return FloatLitExpr(tmp[1])
+            return LitExpr(tmp[1], float)
         elif self.currtok[0] == Lexer.STRINGLIT:  # parse an float literal
             tmp = self.currtok
             self.currtok = next(self.tg)
-            return StringLitExpr(tmp[1])
+            return LitExpr(tmp[1], str)
+        elif self.currtok[0] == Lexer.KEYWORD and self.currtok[1] in {"true", "false"}:
+            tmp = self.currtok
+            self.currtok = next(self.tg)
+            return LitExpr(tmp[1], bool)
         elif self.currtok[0] == Lexer.LPAREN:  # parse a parenthesized expression
             self.currtok = next(self.tg)
             tree = self.expression()
@@ -410,7 +433,7 @@ class Parser:
                 raise SLUCSyntaxError("Missing right paren on line {0}".format(self.currtok[2]))
 
         # if we get here we have a problem
-        raise SLUCSyntaxError("ERROR: Unexpected token {0} on line {1}".format(self.currtok[1], self.currtok[2]))
+        raise SLUCSyntaxError("ERROR: Unexpected token {0} on line {1}".format(self.currtok[0], self.currtok[2]))
 
 
 # create our own exception by inheriting from python's exception

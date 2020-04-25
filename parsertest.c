@@ -15,6 +15,7 @@ int sum_3_or_5(int n) {
 int main() {
  print("The answer is: ", sum_3_or_5(1000), "Woot!");
 }
+/*
 // Test #2 A program that determines if
 // a number n is prime
 int main() {
@@ -31,3 +32,4 @@ int main() {
  }
  print(i-1);
 }
+*/

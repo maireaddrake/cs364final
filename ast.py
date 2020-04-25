@@ -64,6 +64,19 @@ class FunctionDef:
         st = st + "}"
         return st
 
+
+class Block(Stmt):
+    def __init__(self, stmts: [[Stmt]]):
+        self.stmts = stmts
+
+    def __str__(self):
+        temp = ""
+        for i in self.stmts:
+            for j in i:
+                temp = temp + str(j)
+        return temp
+
+
 class IfStmt(Stmt):
     def __init__(self, cond: Expr, truepart: Stmt, falsepart: [Stmt]):
         self.cond = cond
@@ -89,7 +102,7 @@ class WhileStmt(Stmt):
         self.inLoop = inLoop
 
     def __str__(self):
-        return "while ( {0} ) {{ {1} }}".format(str(self.cond), str(self.inLoop))
+        return "while ({0}) {1}".format(str(self.cond), str(self.inLoop))
 
     def eval(self, env):
         while self.cond.eval():
@@ -104,8 +117,8 @@ class PrintStmt(Stmt):
         pri = "print({0}" .format(str(self.pArg))
         if len(self.pArgList) != 0:
             for i in self.pArgList:
-                pri = pri + ", " + i
-        pri  = pri + ");"
+                pri = pri + ", " + str(i)
+        pri  = pri + ")"
         return pri
 
 class ReturnStmt(Stmt):
@@ -121,7 +134,10 @@ class Program:
         self.funcs = funcs
 
     def __str__(self):
-        return str(self.funcs[0])
+        temp = ""
+        for i in self.funcs:
+            temp = temp + str(i)
+        return temp
 
 
 class BinaryExpr(Expr):
@@ -165,46 +181,23 @@ class IDExpr(Expr):
         return Type
 
 
-class IntLitExpr(Expr):
-
-    def __init__(self, intlit: str):
-        self.intlit = int(intlit)
+class LitExpr(Expr):
+    def __init__(self, lit: str, t: type):
+        self.lit = lit
+        self.t = t
 
     def __str__(self):
-        return str(self.intlit)
+        if self.t == str:
+            return "\"" + self.lit + "\""
+        else:
+            return str(self.lit)
 
     def eval(self):
-        return self.intlit  # base case
-
-    def typeof(self) -> type:
-
-        # return IntegerType
-        return int
-
-
-class StringLitExpr(Expr):
-
-    def __init__(self, strlit: str):
-        self.strlit = strlit
-
-    def __str__(self):
-        return "\"" + self.strlit + "\""
+        return self.lit  # base case
 
     def typeof(self) -> type:
         # return IntegerType
-        return str
-
-
-class FloatLitExpr(Expr):
-
-    def __init__(self, floatlit: str):
-        self.floatlit = floatlit
-
-    def __str__(self):
-        return str(self.floatlit)
-
-    def eval(self):
-        return self.floatlit  # base case
+        return self.t
 
 
 if __name__ == '__main__':
