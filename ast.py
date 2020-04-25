@@ -105,6 +105,7 @@ class IfStmt(Stmt):
         elif self.falsepart is not None:
             self.falsepart.eval(env)
 
+
 class WhileStmt(Stmt):
     def __init__(self, cond: Expr, inLoop: Stmt):
         self.cond = cond
@@ -116,6 +117,7 @@ class WhileStmt(Stmt):
     def eval(self, env):
         while self.cond.eval():
             self.inLoop.eval(env)
+
 
 class PrintStmt(Stmt):
     def __init__(self, pArg: Stmt, pArgList: Optional[Stmt]):
@@ -129,6 +131,7 @@ class PrintStmt(Stmt):
                 pri = pri + ", " + str(i)
         pri  = pri + ")"
         return pri
+
 
 class ReturnStmt(Stmt):
     def __init__(self, exp:Expr):
@@ -188,6 +191,22 @@ class IDExpr(Expr):
     def typeof(self, decls) -> Type:
         # lookup the value of self.id Look up where?
         return Type
+
+
+class FunctionExpr(Expr):
+    def __init__(self, id: str, params: []):
+        self.id = id
+        self.params = params
+
+    def __str__(self):
+        temp = "{0}(".format(str(self.id))
+        if len(self.params) > 0:
+            temp = temp + str(self.params[0])
+            for i in range(1, len(self.params)):
+                temp = temp + ", {0}".format(self.params[i])
+            return temp + ")"
+        else:
+            return "{0}()".format(str(self.id))
 
 
 class LitExpr(Expr):
