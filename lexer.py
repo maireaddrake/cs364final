@@ -89,7 +89,7 @@ class Lexer:
 
         tokenDict = {
             "([0-9][_0-9]*[0-9]$|[0-9]$)": Lexer.INTLIT,
-            '^[1-9][_0-9]*(\.)?(_)*[_0-9]*[e|_0-9](-|\+)?[_0-9]*[0-9]$': Lexer.FLOATLIT,
+            '(^[1-9][_0-9]*(\.)?(_)*[_0-9]*[e|_0-9](-|\+)?[_0-9]*[0-9]$)|([0-9]+\.[0-9]+)': Lexer.FLOATLIT,
             'print|bool|else|false|if|true|float|int|char|while|main': Lexer.KEYWORD,
             '^[_a-zA-Z][_a-zA-Z0-9]*': Lexer.ID,
             '(^\".+\")|(^\'.+\')': Lexer.STRINGLIT,

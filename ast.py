@@ -1,6 +1,5 @@
 """
 SLU-C Abstract Syntax Trees
-
 An abstract syntax tree (AST) is a data structure that represents the
 concrete (text)
 """
@@ -74,7 +73,7 @@ class IfStmt(Stmt):
         if len(self.falsepart) == 0:
             return "if ( {0} ) {1}".format(str(self.cond), str(self.truepart))
         else:
-            return "if ( {0} ) {1} else {2}".format(str(self.cond), str(self.truepart), str(self.falsepart))
+            return "if ( {0} ) {1}; else {2}".format(str(self.cond), str(self.truepart), str(self.falsepart))
 
     def eval(self, env):
 
@@ -105,8 +104,14 @@ class PrintStmt(Stmt):
         if len(self.pArgList) != 0:
             for i in self.pArgList:
                 pri = pri + ", " + i
-        pri  = pri + ")"
+        pri  = pri + ");"
         return pri
+
+class ReturnStmt(Stmt):
+    def __init__(self, exp:Expr):
+        self.exp = exp
+    def __str__(self):
+        return "return {0};" .format(str(self.exp))
 
 
 class Program:
