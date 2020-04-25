@@ -271,7 +271,7 @@ class Parser:
         if self.currtok[0] == Lexer.STRINGLIT:
             tmp = self.currtok
             self.currtok = next(self.tg)
-            return StringLitExpr(tmp[1])
+            return LitExpr(tmp[1], str)
         # parse the Expression
         else:
             return self.expression()
