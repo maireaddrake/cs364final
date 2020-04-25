@@ -4,39 +4,77 @@ SLU-C Abstract Syntax Trees
 An abstract syntax tree (AST) is a data structure that represents the
 concrete (text)
 """
-from typing import Sequence, Union, Optional
+from typing import Sequence, List, Union, Optional
+
 
 # use a class hierarchy to represent types
+class Expr:
+    pass
 
 
 class Type:
-    pass
-
-
-class FunctionDef:
-    def __init__(self, t, id:str, params, decls, stmts):
-        # provide typehints for all of the parameters
-        # Decls should be a dictionary
-        # Key: id
-        # Value: type
-        pass
+    def __init__(self, t: str):
+        self.t = t
 
     def __str__(self):
-        pass
+        return self.t
 
 
-class Expr:
-    pass
+class Params:
+    def __init__(self, prms: Sequence):
+        self.prms = prms
+
+    def __str__(self):
+        if len(self.prms) > 0:
+            st = "{0} {1}".format(self.prms[0][0], self.prms[0][1])
+            for i in range(1, len(self.prms)):
+                st = st + ", {0} {1}".format(self.prms[i][0], self.prms[i][1])
+            return st
+        else:
+            return ""
+
+
+class Declaration:
+    def __init__(self, type: Type, id: Expr):
+        self.type = type
+        self.id = id
+
+    def __str__(self):
+        return "{0} {1};".format(str(self.type), str(self.id))
 
 
 class Stmt:
     pass
 
+
+class FunctionDef:
+    def __init__(self, t: Type, id: Expr, params: Params, decls: [Declaration], stmts: [Stmt]):
+        self.t = t
+        self.id = id
+        self.params = params
+        self.decls = decls
+        self.stmts = stmts
+
+    def __str__(self):
+        st = "{0} {1}({2}) {{".format(str(self.t), str(self.id), str(self.params))
+        for d in self.decls:
+            st = st + str(d)
+        for s in self.stmts:
+            st = st + str(s)
+        st = st + "}"
+        return st
+
 class IfStmt(Stmt):
-    def __init__(self, cond: Expr, truepart: Stmt, falsepart: Optional[Stmt]):
+    def __init__(self, cond: Expr, truepart: Stmt, falsepart: [Stmt]):
         self.cond = cond
         self.truepart = truepart
         self.falsepart = falsepart
+
+    def __str__(self):
+        if len(self.falsepart) == 0:
+            return "if ( {0} ) {1}".format(str(self.cond), str(self.truepart))
+        else:
+            return "if ( {0} ) {1} else {2}".format(str(self.cond), str(self.truepart), str(self.falsepart))
 
     def eval(self, env):
 
@@ -49,6 +87,9 @@ class WhileStmt(Stmt):
     def __init__(self, cond: Expr, inLoop: Stmt):
         self.cond = cond
         self.inLoop = inLoop
+
+    def __str__(self):
+        return "while ( {0} ) {{ {1} }}".format(str(self.cond), str(self.inLoop))
 
     def eval(self, env):
         while self.cond.eval():
@@ -67,14 +108,14 @@ class PrintStmt(Stmt):
         pri  = pri + ")"
         return pri
 
-class Declaration:
-    pass
-
 
 class Program:
 
     def __init__(self, funcs: Sequence[FunctionDef]):
         self.funcs = funcs
+
+    def __str__(self):
+        return str(self.funcs[0])
 
 
 class BinaryExpr(Expr):
@@ -96,9 +137,6 @@ class UnaryOp(Expr):
     def __str__(self):
         return"{0}{1}".format(self.op, str(self.tree))
 
-    def scheme(self):
-        return "({0} {1})".format(self.op, self.tree.scheme())
-
     def eval(self) -> Union[int, float]:
         return self.tree.eval() * -1
 
@@ -109,9 +147,6 @@ class IDExpr(Expr):
         self.id = id
 
     def __str__(self):
-        return self.id
-
-    def scheme(self):
         return self.id
 
     def eval(self, env):
@@ -132,18 +167,26 @@ class IntLitExpr(Expr):
     def __str__(self):
         return str(self.intlit)
 
-    def scheme(self):
-        return str(self.intlit)
-
     def eval(self):
         return self.intlit  # base case
 
-    #def typeof(self) -> Type:
-    # representing SLU-C types using Python types
     def typeof(self) -> type:
 
         # return IntegerType
         return int
+
+
+class StringLitExpr(Expr):
+
+    def __init__(self, strlit: str):
+        self.strlit = strlit
+
+    def __str__(self):
+        return "\"" + self.strlit + "\""
+
+    def typeof(self) -> type:
+        # return IntegerType
+        return str
 
 
 class FloatLitExpr(Expr):
@@ -154,25 +197,8 @@ class FloatLitExpr(Expr):
     def __str__(self):
         return str(self.floatlit)
 
-    def scheme(self):
-        return str(self.floatlit)
-
     def eval(self):
         return self.floatlit  # base case
-
-class StringLitExpr(Expr):
-
-    def __init__(self, stringlit: str):
-        self.stringlit = stringlit
-
-    def __str__(self):
-        return str(self.stringlit)
-
-    def scheme(self):
-        return str(self.stringlit)
-
-    def eval(self):
-        return self.stringlit
 
 
 if __name__ == '__main__':
