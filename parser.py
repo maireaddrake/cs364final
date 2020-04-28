@@ -447,14 +447,15 @@ class SLUCSyntaxError(Exception):
         return self.message
 
 
-import sys
 if __name__ == "__main__":
 
-    file = sys.argv[-1]
+    import sys
 
-    p = Parser(file)
+    filename = sys.argv[-1]
 
-    t = p.program
+    p = Parser(filename)
+
+    t = p.program()
 
     print(t)
 
