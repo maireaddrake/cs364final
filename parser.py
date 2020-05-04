@@ -457,6 +457,6 @@ if __name__ == "__main__":
 
     t = p.program()
 
-    print(t)
+    print(t.eval())
 
 

@@ -33,6 +33,9 @@ class Params:
         else:
             return ""
 
+    def eval(self):
+        pass
+
 
 class Declaration:
     def __init__(self, type: Type, id: Expr):
@@ -63,6 +66,15 @@ class FunctionDef:
             st = st + str(s) + " "
         st = st + "}"
         return st
+
+    def eval(self) -> Union[int, float, bool, str]:
+        # an environment maps identifiers to values
+        # parameters or local variables
+        # to evaluate a function you evaluate all of the statements
+        # within the environment
+        env = {}   # TODO Fix this
+        for s in self.stmts:
+            s.eval(env)  # TODO define environment
 
 
 class Assignment(Stmt):
@@ -152,6 +164,12 @@ class Program:
             temp = temp + str(i)
         return temp
 
+    def eval(self):
+        funcEvals = []
+        for i in self.funcs:
+            funcEvals.append(i.eval())
+        return funcEvals
+
 
 class BinaryExpr(Expr):
 
@@ -210,6 +228,7 @@ class FunctionExpr(Expr):
             return "{0}()".format(str(self.id))
 
 
+
 class LitExpr(Expr):
     def __init__(self, lit: str, t: type):
         self.lit = lit
@@ -225,7 +244,6 @@ class LitExpr(Expr):
         return self.lit  # base case
 
     def typeof(self) -> type:
-        # return IntegerType
         return self.t
 
 
