@@ -5,7 +5,22 @@ An abstract syntax tree (AST) is a data structure that represents the
 concrete (text)
 """
 from typing import Sequence, List, Union, Optional
+import operator
 
+ops = {'*': operator.mul,
+       '/': operator.div,
+       '%': operator.mod,
+       '+': operator.add,
+       '-': operator.sub,
+       '>': operator.gt,
+       '>=': operator.ge,
+       '<': operator.lt,
+       '<=': operator.le,
+       '==': operator.eq,
+       '!=': operator.ne,
+       '&&': operator.and_,
+       '||': operator.or_
+}
 
 # use a class hierarchy to represent types
 class Expr:
@@ -167,6 +182,9 @@ class ReturnStmt(Stmt):
     def __str__(self):
         return "return {0};" .format(str(self.exp))
 
+    def eval(self):
+        return self.exp.eval()
+
 
 class Program:
 
@@ -195,6 +213,12 @@ class BinaryExpr(Expr):
 
     def __str__(self):
         return "({0} {1} {2})".format(str(self.left), self.op, str(self.right))
+
+    def eval(self):
+        return ops[op](self.left.eval(), self.right.eval())
+
+
+
 
 
 class UnaryOp(Expr):

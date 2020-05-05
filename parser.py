@@ -287,7 +287,6 @@ class Parser:
             # we matched a plus
             right = self.conjunction()
             left = BinaryExpr(left, op, right)
-
         return left
 
     def conjunction(self) -> Expr:
