@@ -34,7 +34,7 @@ class Params:
             return ""
 
     def eval(self):
-        pass
+        return self.prms
 
 
 class Declaration:
@@ -44,6 +44,9 @@ class Declaration:
 
     def __str__(self):
         return "{0} {1};".format(str(self.type), str(self.id))
+
+    def eval(self):
+        return self.id, self.type
 
 
 class Stmt:
@@ -73,6 +76,12 @@ class FunctionDef:
         # to evaluate a function you evaluate all of the statements
         # within the environment
         env = {}   # TODO Fix this
+        prms = self.params.eval()
+        for p in prms:
+            env[p[0]] = p[1]
+        for d in self.decls:
+            dec = d.eval()
+            env[dec[0]] = (dec[1], None)
         for s in self.stmts:
             s.eval(env)  # TODO define environment
 
@@ -84,6 +93,12 @@ class Assignment(Stmt):
 
     def __str__(self):
         return "{0} = {1};".format(str(self.var), str(self.exp))
+
+    def eval(self, env):
+        if self.var in env:
+            env[self.var.eval(env)] = self.exp.eval(env)
+        else:
+            raise SLUCFunctionError("Error: Variable {0} is not defined in this environment".format(self.var))
 
 
 class Block(Stmt):
@@ -228,7 +243,6 @@ class FunctionExpr(Expr):
             return "{0}()".format(str(self.id))
 
 
-
 class LitExpr(Expr):
     def __init__(self, lit: str, t: type):
         self.lit = lit
@@ -245,6 +259,15 @@ class LitExpr(Expr):
 
     def typeof(self) -> type:
         return self.t
+
+
+class SLUCFunctionError(Exception):
+    def __init__(self, message: str):
+        Exception.__init__(self)
+        self.message = message
+
+    def __str__(self):
+        return self.message
 
 
 if __name__ == '__main__':
