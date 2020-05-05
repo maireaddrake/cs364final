@@ -4,11 +4,11 @@ SLU-C Abstract Syntax Trees
 An abstract syntax tree (AST) is a data structure that represents the
 concrete (text)
 """
-from typing import Sequence, List, Union, Optional
+from typing import Sequence, List, Union, Optional, Dict
 import operator
 
 ops = {'*': operator.mul,
-       '/': operator.div,
+       '/': operator.truediv,
        '%': operator.mod,
        '+': operator.add,
        '-': operator.sub,
@@ -93,12 +93,15 @@ class FunctionDef:
         env = {}   # TODO Fix this
         prms = self.params.eval()
         for p in prms:
-            env[p[0]] = p[1]
+            env[p[1]] = (p[0], None)
         for d in self.decls:
             dec = d.eval()
+            print(dec)
             env[dec[0]] = (dec[1], None)
         for s in self.stmts:
-            s.eval(env)  # TODO define environment
+            st = s.eval(env)
+            if st is Dict:
+                env = st
 
 
 class Assignment(Stmt):
@@ -109,9 +112,11 @@ class Assignment(Stmt):
     def __str__(self):
         return "{0} = {1};".format(str(self.var), str(self.exp))
 
-    def eval(self, env):
-        if self.var in env:
+    def eval(self, env: Dict):
+        print(env)
+        if self.var in env.keys():
             env[self.var.eval(env)] = self.exp.eval(env)
+            return env
         else:
             raise SLUCFunctionError("Error: Variable {0} is not defined in this environment".format(self.var))
 
@@ -178,11 +183,13 @@ class PrintStmt(Stmt):
                 pri = pri + ", " + str(i)
         pri  = pri + ")"
         return pri
-       
-   def eval(self, env):
-        self.pArg.eval(env)
+
+    def eval(self, env):
+        args = [self.pArg.eval(env)]
         if self.pArgList is not None:
-            self.pArgList.eval(env)
+            args.append(self.pArgList.eval(env))
+        for i in args:
+            print(i)
 
 
 class ReturnStmt(Stmt):
@@ -225,10 +232,7 @@ class BinaryExpr(Expr):
         return "({0} {1} {2})".format(str(self.left), self.op, str(self.right))
 
     def eval(self):
-        return ops[op](self.left.eval(), self.right.eval())
-
-
-
+        return ops[self.op](self.left.eval(), self.right.eval())
 
 
 class UnaryOp(Expr):
@@ -252,13 +256,11 @@ class IDExpr(Expr):
         return self.id
 
     def eval(self, env):
-        # lookup the value of self.id
-        # env is a dictionary
-        pass
+        return env[self.id][1]
 
-    def typeof(self, decls) -> Type:
+    def typeof(self, env) -> Type:
         # lookup the value of self.id Look up where?
-        return Type
+        return env[self.id][0]
 
 
 class FunctionExpr(Expr):

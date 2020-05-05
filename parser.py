@@ -433,7 +433,7 @@ class Parser:
                 raise SLUCSyntaxError("Missing right paren on line {0}".format(self.currtok[2]))
 
         # if we get here we have a problem
-        raise SLUCSyntaxError("ERROR: Unexpected token {0} on line {1}".format(self.currtok[1], self.currtok[2]))
+        raise SLUCSyntaxError("ERROR: Unexpected token {0} on line {1}".format(self.currtok[0], self.currtok[2]))
 
 
 # create our own exception by inheriting from python's exception
@@ -452,7 +452,7 @@ if __name__ == "__main__":
 
     filename = sys.argv[-1]
 
-    p = Parser(filename)
+    p = Parser("interpretertest.c")
 
     t = p.program()
 
