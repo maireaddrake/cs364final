@@ -54,7 +54,7 @@ class Parser:
                         temp = FunctionDef(Type(t), IDExpr(id), params, decls, stmts)
                         return temp
                     else:
-                        raise SLUCSyntaxError("Missing Right Brace on line {0}".format(self.currtok[1]))
+                        raise SLUCSyntaxError("Missing Right Brace on line {0}".format(self.currtok[2]))
         raise SLUCSyntaxError("Error")
 
     def params(self) -> Params:
@@ -148,7 +148,6 @@ class Parser:
         ReturnStmt → return Expression ;
         """
         self.currtok = next(self.tg)
-        print(self.currtok[1])
         temp = self.expression()
         if self.currtok[0] == Lexer.SEMI:
             self.currtok = next(self.tg)
@@ -393,14 +392,17 @@ class Parser:
                 if self.currtok[0] == Lexer.LPAREN:
                     self.currtok = next(self.tg)
                     params = []
-                    params.append(self.currtok[1])
-                    self.currtok = next(self.tg)
-                    while self.currtok[0] == Lexer.COMMA:
-                        self.currtok = next(self.tg)
-                        params.append(self.currtok[1])
                     if self.currtok[0] == Lexer.RPAREN:
+                        return FunctionExpr(tmp[1], params)
+                    else:
+                        params.append(self.currtok[1])
                         self.currtok = next(self.tg)
-                        return IDExpr(tmp[1])
+                        while self.currtok[0] == Lexer.COMMA:
+                            self.currtok = next(self.tg)
+                            params.append(self.currtok[1])
+                        if self.currtok[0] == Lexer.RPAREN:
+                            self.currtok = next(self.tg)
+                            return FunctionExpr(tmp[1], params)
                 else:
                     raise SLUCSyntaxError("Invalid Function call")
             else:
@@ -432,7 +434,7 @@ class Parser:
                 raise SLUCSyntaxError("Missing right paren on line {0}".format(self.currtok[2]))
 
         # if we get here we have a problem
-        raise SLUCSyntaxError("ERROR: Unexpected token {0} on line {1}".format(self.currtok[0], self.currtok[2]))
+        raise SLUCSyntaxError("ERROR: Unexpected token {0} on line {1}".format(self.currtok[1], self.currtok[2]))
 
 
 # create our own exception by inheriting from python's exception
@@ -446,10 +448,15 @@ class SLUCSyntaxError(Exception):
 
 
 if __name__ == "__main__":
-    p = Parser('parsertest.c')
+
+    import sys
+
+    filename = sys.argv[-1]
+
+    p = Parser(filename)
+
     t = p.program()
-    print(t)
-    p2 = Parser('parsertest2.c')
-    t2 = p2.program()
-    print(t2)
+
+    print(t.eval())
+
 

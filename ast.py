@@ -33,6 +33,9 @@ class Params:
         else:
             return ""
 
+    def eval(self):
+        return self.prms
+
 
 class Declaration:
     def __init__(self, type: Type, id: Expr):
@@ -41,6 +44,9 @@ class Declaration:
 
     def __str__(self):
         return "{0} {1};".format(str(self.type), str(self.id))
+
+    def eval(self):
+        return self.id, self.type
 
 
 class Stmt:
@@ -64,6 +70,21 @@ class FunctionDef:
         st = st + "}"
         return st
 
+    def eval(self) -> Union[int, float, bool, str]:
+        # an environment maps identifiers to values
+        # parameters or local variables
+        # to evaluate a function you evaluate all of the statements
+        # within the environment
+        env = {}   # TODO Fix this
+        prms = self.params.eval()
+        for p in prms:
+            env[p[0]] = p[1]
+        for d in self.decls:
+            dec = d.eval()
+            env[dec[0]] = (dec[1], None)
+        for s in self.stmts:
+            s.eval(env)  # TODO define environment
+
 
 class Assignment(Stmt):
     def __init__(self, var: Expr, exp: Expr):
@@ -72,6 +93,12 @@ class Assignment(Stmt):
 
     def __str__(self):
         return "{0} = {1};".format(str(self.var), str(self.exp))
+
+    def eval(self, env):
+        if self.var in env:
+            env[self.var.eval(env)] = self.exp.eval(env)
+        else:
+            raise SLUCFunctionError("Error: Variable {0} is not defined in this environment".format(self.var))
 
 
 class Block(Stmt):
@@ -105,6 +132,7 @@ class IfStmt(Stmt):
         elif self.falsepart is not None:
             self.falsepart.eval(env)
 
+
 class WhileStmt(Stmt):
     def __init__(self, cond: Expr, inLoop: Stmt):
         self.cond = cond
@@ -116,6 +144,7 @@ class WhileStmt(Stmt):
     def eval(self, env):
         while self.cond.eval():
             self.inLoop.eval(env)
+
 
 class PrintStmt(Stmt):
     def __init__(self, pArg: Stmt, pArgList: Optional[Stmt]):
@@ -130,9 +159,11 @@ class PrintStmt(Stmt):
         pri  = pri + ")"
         return pri
 
+
 class ReturnStmt(Stmt):
     def __init__(self, exp:Expr):
         self.exp = exp
+
     def __str__(self):
         return "return {0};" .format(str(self.exp))
 
@@ -147,6 +178,12 @@ class Program:
         for i in self.funcs:
             temp = temp + str(i)
         return temp
+
+    def eval(self):
+        funcEvals = []
+        for i in self.funcs:
+            funcEvals.append(i.eval())
+        return funcEvals
 
 
 class BinaryExpr(Expr):
@@ -190,6 +227,22 @@ class IDExpr(Expr):
         return Type
 
 
+class FunctionExpr(Expr):
+    def __init__(self, id: str, params: []):
+        self.id = id
+        self.params = params
+
+    def __str__(self):
+        temp = "{0}(".format(str(self.id))
+        if len(self.params) > 0:
+            temp = temp + str(self.params[0])
+            for i in range(1, len(self.params)):
+                temp = temp + ", {0}".format(self.params[i])
+            return temp + ")"
+        else:
+            return "{0}()".format(str(self.id))
+
+
 class LitExpr(Expr):
     def __init__(self, lit: str, t: type):
         self.lit = lit
@@ -205,8 +258,16 @@ class LitExpr(Expr):
         return self.lit  # base case
 
     def typeof(self) -> type:
-        # return IntegerType
         return self.t
+
+
+class SLUCFunctionError(Exception):
+    def __init__(self, message: str):
+        Exception.__init__(self)
+        self.message = message
+
+    def __str__(self):
+        return self.message
 
 
 if __name__ == '__main__':
