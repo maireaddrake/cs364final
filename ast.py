@@ -112,6 +112,11 @@ class Block(Stmt):
                 temp = temp + str(j)
         return temp
 
+    def eval(self, env):
+        # TODO condition for empty list?
+        for i in self.stmts:
+            i.eval(env)
+
 
 class IfStmt(Stmt):
     def __init__(self, cond: Expr, truepart: Stmt, falsepart: [Stmt]):
@@ -147,7 +152,7 @@ class WhileStmt(Stmt):
 
 
 class PrintStmt(Stmt):
-    def __init__(self, pArg: Stmt, pArgList: Optional[Stmt]):
+    def __init__(self, pArg: Union[Expr, str], pArgList: Optional[Union[Expr, str]]):
         self.pArg = pArg
         self.pArgList = pArgList
 
@@ -158,6 +163,11 @@ class PrintStmt(Stmt):
                 pri = pri + ", " + str(i)
         pri  = pri + ")"
         return pri
+
+    def eval(self, env):
+        self.pArg.eval(env)
+        if self.pArgList is not None:
+            self.pArgList.eval(env)
 
 
 class ReturnStmt(Stmt):
