@@ -80,6 +80,7 @@ class Lexer:
                 (\>\>) |    # binary right shift and capture
                 (,)  |
                 (;)  |
+                (!)(?!(\=)) |
                 ((?<!(\\))\") |
                 ((?<!(\\))\') |
                 (:)

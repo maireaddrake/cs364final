@@ -99,10 +99,7 @@ class Parser:
         self.currtok = next(self.tg)
         id = self.currtok[1]
         self.currtok = next(self.tg)
-        if id in self.variableDict:
-            raise SLUCSyntaxError("Variable {0} declared twice on line {1}".format(id, self.currtok[2]))
-        else:
-            self.variableDict[id] = (t, None)
+        self.variableDict[id] = (t, None)
         if self.currtok[0] == Lexer.SEMI:
             temp = Declaration(t, id)
             id = self.currtok[1]
@@ -369,6 +366,7 @@ class Parser:
         # only advance to the next token on a successful match
         if self.currtok[0] in {Lexer.MINUS, Lexer.FACT}:
             op = self.currtok[1]
+            print(self.currtok[0], self.currtok[1])
             self.currtok = next(self.tg)
             tree = self.primary()
             return UnaryOp(tree, op)
@@ -394,11 +392,10 @@ class Parser:
                     if self.currtok[0] == Lexer.RPAREN:
                         return FunctionExpr(tmp[1], params)
                     else:
-                        params.append(self.currtok[1])
-                        self.currtok = next(self.tg)
+                        params.append(self.primary())
                         while self.currtok[0] == Lexer.COMMA:
                             self.currtok = next(self.tg)
-                            params.append(self.currtok[1])
+                            params.append(self.primary())
                         if self.currtok[0] == Lexer.RPAREN:
                             self.currtok = next(self.tg)
                             return FunctionExpr(tmp[1], params)
@@ -433,7 +430,7 @@ class Parser:
                 raise SLUCSyntaxError("Missing right paren on line {0}".format(self.currtok[2]))
 
         # if we get here we have a problem
-        raise SLUCSyntaxError("ERROR: Unexpected token {0} on line {1}".format(self.currtok[0], self.currtok[2]))
+        raise SLUCSyntaxError("ERROR: Unexpected token {0} on line {1}".format(self.currtok[1], self.currtok[2]))
 
 
 # create our own exception by inheriting from python's exception

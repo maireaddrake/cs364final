@@ -85,23 +85,24 @@ class FunctionDef:
         st = st + "}"
         return st
 
-    def eval(self) -> Union[int, float, bool, str]:
-        # an environment maps identifiers to values
-        # parameters or local variables
-        # to evaluate a function you evaluate all of the statements
-        # within the environment
-        env = {}   # TODO Fix this
+    def eval(self, given: Sequence[Expr]) -> Union[int, float, bool, str]:
+        env = {}
         prms = self.params.eval()
-        for p in prms:
-            env[p[1]] = (p[0], None)
+        if len(prms) != len(given):
+            raise SLUCFunctionError("Error: function {0} expected {1} parameters, got {2}".format(self.id, len(prms), len(given)))
+        for p in range(len(prms)):
+            env[prms[p][1]] = (prms[p][0], given[p])
         for d in self.decls:
             dec = d.eval()
-            print(dec)
             env[dec[0]] = (dec[1], None)
         for s in self.stmts:
-            st = s.eval(env)
-            if st is Dict:
-                env = st
+            if type(s) != str:
+                st = s.eval(env)
+                print(st)
+                if st is Dict:
+                    env = st
+                elif st is not None:
+                    return st
 
 
 class Assignment(Stmt):
@@ -113,11 +114,11 @@ class Assignment(Stmt):
         return "{0} = {1};".format(str(self.var), str(self.exp))
 
     def eval(self, env: Dict):
-        print(env)
         if str(self.var) in env.keys():
-            if env[str(self.var)][1] == self.exp.typeof():
-                temp = env[self.var][0]
-                env[str(self.var)] = (temp, self.exp)
+            ex = self.exp.eval(env)
+            if env[str(self.var)][0] == type(ex).__name__:
+                temp = env[str(self.var)][0]
+                env[str(self.var)] = (temp, ex)
                 return env
             else:
                 raise SLUCFunctionError("Error: Type Mismatch")
@@ -139,7 +140,9 @@ class Block(Stmt):
     def eval(self, env):
         # TODO condition for empty list?
         for i in self.stmts:
-            i.eval(env)
+            for j in i:
+                if type(j) != str:
+                    j.eval(env)
 
 
 class IfStmt(Stmt):
@@ -156,10 +159,11 @@ class IfStmt(Stmt):
 
     def eval(self, env):
 
-        if self.cond.eval():
+        if self.cond.eval(env):
             self.truepart.eval(env)
         elif self.falsepart is not None:
-            self.falsepart.eval(env)
+            for i in self.falsepart:
+                i.eval(env)
 
 
 class WhileStmt(Stmt):
@@ -171,12 +175,12 @@ class WhileStmt(Stmt):
         return "while ({0}) {1}".format(str(self.cond), str(self.inLoop))
 
     def eval(self, env):
-        while self.cond.eval():
+        while self.cond.eval(env):
             self.inLoop.eval(env)
 
 
 class PrintStmt(Stmt):
-    def __init__(self, pArg: Stmt, pArgList: Optional[Stmt]):
+    def __init__(self, pArg: Union[Expr, str], pArgList: Optional[Union[Expr, str]]):
         self.pArg = pArg
         self.pArgList = pArgList
 
@@ -191,26 +195,32 @@ class PrintStmt(Stmt):
     def eval(self, env):
         args = [self.pArg.eval(env)]
         if self.pArgList is not None:
-            args.append(self.pArgList.eval(env))
+            for i in self.pArgList:
+                if type(i) == str:
+                    args.append(i)
+                args.append(i.eval(env))
         for i in args:
             print(i)
 
 
 class ReturnStmt(Stmt):
-    def __init__(self, exp:Expr):
+    def __init__(self, exp: Expr):
         self.exp = exp
 
     def __str__(self):
         return "return {0};" .format(str(self.exp))
 
-    def eval(self):
-        return self.exp.eval()
+    def eval(self, env):
+        return self.exp.eval(env)
 
+
+funcDict = {}
 
 class Program:
 
     def __init__(self, funcs: Sequence[FunctionDef]):
         self.funcs = funcs
+        global funcDict
 
     def __str__(self):
         temp = ""
@@ -219,10 +229,11 @@ class Program:
         return temp
 
     def eval(self):
-        funcEvals = []
         for i in self.funcs:
-            funcEvals.append(i.eval())
-        return funcEvals
+            funcDict[str(i.id)] = i
+            if str(i.id) == "main":
+                i.eval([])
+        return None
 
 
 class BinaryExpr(Expr):
@@ -235,8 +246,12 @@ class BinaryExpr(Expr):
     def __str__(self):
         return "({0} {1} {2})".format(str(self.left), self.op, str(self.right))
 
-    def eval(self):
-        return ops[self.op](self.left.eval(), self.right.eval())
+    def eval(self, env):
+        l = self.left.eval(env)
+        r = self.right.eval(env)
+        if l is None or r is None:
+            return None
+        return ops[self.op](l, r)
 
 
 class UnaryOp(Expr):
@@ -247,8 +262,8 @@ class UnaryOp(Expr):
     def __str__(self):
         return"{0}{1}".format(self.op, str(self.tree))
 
-    def eval(self) -> Union[int, float]:
-        return self.tree.eval() * -1
+    def eval(self, env) -> Union[int, float, bool]:
+        return self.tree.eval(env) * -1
 
 
 class IDExpr(Expr):
@@ -260,17 +275,18 @@ class IDExpr(Expr):
         return self.id
 
     def eval(self, env):
-        return env[self.id][1]
+        return env[self.id][1].eval(env)
 
     def typeof(self, env) -> type:
         # lookup the value of self.id Look up where?
-        return env[self.id][0]
+        return env[self.id][0].eval(env)
 
 
 class FunctionExpr(Expr):
     def __init__(self, id: str, params: []):
         self.id = id
         self.params = params
+        global funcDict
 
     def __str__(self):
         temp = "{0}(".format(str(self.id))
@@ -281,6 +297,10 @@ class FunctionExpr(Expr):
             return temp + ")"
         else:
             return "{0}()".format(str(self.id))
+
+    def eval(self, env):
+        x = funcDict[self.id].eval(self.params)
+        return x
 
 
 class LitExpr(Expr):
@@ -295,9 +315,9 @@ class LitExpr(Expr):
             return str(self.lit)
 
     def eval(self, env):
-        return self.lit  # base case
+        return self.t(self.lit)
 
-    def typeof(self) -> type:
+    def typeof(self, env) -> type:
         return self.t
 
 

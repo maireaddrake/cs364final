@@ -8,7 +8,7 @@
 // 3) eval works but the only way your program has output is
 //    using a print statement.
 // 4) No type checking, but your interpreter still never crashes.
-
+/*
 int main() {
 
     int x;
@@ -27,9 +27,9 @@ int main() {
         x = x - 1;
     }
 }
-
+*/
 // -------------------------------------------------------------------------------
-/*
+
 // Mid-level Functionality 90 Points
 // 1) Functions are implemented (but no recursion)
 // 2) Grammar needs to be extended with function call syntax
@@ -45,6 +45,8 @@ int main() {
    float y;
    bool z;
    x = f(33);  // <-- Need to add function call syntax
+
+   print("hi");
 
    // It is not hard to add function call syntax. It is just an identifier
    // followed by zero or more expressions separated by commas.
@@ -66,7 +68,7 @@ int main() {
 //  3) booleans are strict and not convertible to ints
 
 // ----------------------------------------------------------------------
-
+/*
 // Full Featured Functionality 100 points (design)
 // Good design that is DRY and SOLID
 // recursion works and mutual recursion works.
