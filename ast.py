@@ -53,15 +53,15 @@ class Params:
 
 
 class Declaration:
-    def __init__(self, type: Type, id: Expr):
-        self.type = type
+    def __init__(self, t: type, id: Expr):
+        self.t = t
         self.id = id
 
     def __str__(self):
-        return "{0} {1};".format(str(self.type), str(self.id))
+        return "{0} {1};".format(str(self.t), str(self.id))
 
     def eval(self):
-        return self.id, self.type
+        return self.id, self.t
 
 
 class Stmt:
@@ -114,9 +114,13 @@ class Assignment(Stmt):
 
     def eval(self, env: Dict):
         print(env)
-        if self.var in env.keys():
-            env[self.var.eval(env)] = self.exp.eval(env)
-            return env
+        if str(self.var) in env.keys():
+            if env[str(self.var)][1] == self.exp.typeof():
+                temp = env[self.var][0]
+                env[str(self.var)] = (temp, self.exp)
+                return env
+            else:
+                raise SLUCFunctionError("Error: Type Mismatch")
         else:
             raise SLUCFunctionError("Error: Variable {0} is not defined in this environment".format(self.var))
 
@@ -181,7 +185,7 @@ class PrintStmt(Stmt):
         if len(self.pArgList) != 0:
             for i in self.pArgList:
                 pri = pri + ", " + str(i)
-        pri  = pri + ")"
+        pri = pri + ")"
         return pri
 
     def eval(self, env):
@@ -258,7 +262,7 @@ class IDExpr(Expr):
     def eval(self, env):
         return env[self.id][1]
 
-    def typeof(self, env) -> Type:
+    def typeof(self, env) -> type:
         # lookup the value of self.id Look up where?
         return env[self.id][0]
 
@@ -290,7 +294,7 @@ class LitExpr(Expr):
         else:
             return str(self.lit)
 
-    def eval(self):
+    def eval(self, env):
         return self.lit  # base case
 
     def typeof(self) -> type:
