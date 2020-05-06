@@ -72,6 +72,7 @@ class Parser:
             self.variableDict[id] = t
             params.append((t, id))
             while self.currtok[0] == Lexer.COMMA:
+                self.currtok = next(self.tg)
                 t = self.currtok[1]
                 self.currtok = next(self.tg)
                 id = self.currtok[1]
@@ -366,7 +367,6 @@ class Parser:
         # only advance to the next token on a successful match
         if self.currtok[0] in {Lexer.MINUS, Lexer.FACT}:
             op = self.currtok[1]
-            print(self.currtok[0], self.currtok[1])
             self.currtok = next(self.tg)
             tree = self.primary()
             return UnaryOp(tree, op)
@@ -392,10 +392,10 @@ class Parser:
                     if self.currtok[0] == Lexer.RPAREN:
                         return FunctionExpr(tmp[1], params)
                     else:
-                        params.append(self.primary())
+                        params.append(self.expression())
                         while self.currtok[0] == Lexer.COMMA:
                             self.currtok = next(self.tg)
-                            params.append(self.primary())
+                            params.append(self.expression())
                         if self.currtok[0] == Lexer.RPAREN:
                             self.currtok = next(self.tg)
                             return FunctionExpr(tmp[1], params)
@@ -453,6 +453,6 @@ if __name__ == "__main__":
 
     t = p.program()
 
-    print(t.eval())
+    t.eval()
 
 

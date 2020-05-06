@@ -98,9 +98,9 @@ class FunctionDef:
         for s in self.stmts:
             if type(s) != str:
                 st = s.eval(env)
-                print(st)
-                if st is Dict:
+                if type(st).__name__ == "dict":
                     env = st
+                    continue
                 elif st is not None:
                     return st
 
@@ -117,6 +117,16 @@ class Assignment(Stmt):
         if str(self.var) in env.keys():
             ex = self.exp.eval(env)
             if env[str(self.var)][0] == type(ex).__name__:
+                temp = env[str(self.var)][0]
+                env[str(self.var)] = (temp, ex)
+                return env
+            elif env[str(self.var)][0] == "int" and type(ex).__name__ == "float":
+                ex = int(ex)
+                temp = env[str(self.var)][0]
+                env[str(self.var)] = (temp, ex)
+                return env
+            elif env[str(self.var)][0] == "float" and type(ex).__name__ == "int":
+                ex = float(ex)
                 temp = env[str(self.var)][0]
                 env[str(self.var)] = (temp, ex)
                 return env
@@ -275,7 +285,10 @@ class IDExpr(Expr):
         return self.id
 
     def eval(self, env):
-        return env[self.id][1].eval(env)
+        if type(env[self.id][1]) in {int, float, bool, str}:
+            return env[self.id][1]
+        else:
+            return env[self.id][1].eval(env)
 
     def typeof(self, env) -> type:
         # lookup the value of self.id Look up where?

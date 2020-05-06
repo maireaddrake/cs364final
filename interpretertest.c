@@ -46,7 +46,6 @@ int main() {
    bool z;
    x = f(33);  // <-- Need to add function call syntax
 
-   print("hi");
 
    // It is not hard to add function call syntax. It is just an identifier
    // followed by zero or more expressions separated by commas.
@@ -54,10 +53,10 @@ int main() {
    y = x * 3.14;  // type checking. int * float is a float
    x = 3.14;      // convert to an int by truncating
 
-   z = 3;              // type error because z is a boolean
-   print(true && 5);   // type error
+   //z = 3;              // type error because z is a boolean
+   //print(true && 5);   // type error
 
-   x = "hello"; // Type error but the grammar disallows this
+   //x = "hello"; // Type error but the grammar disallows this
 
    print(f(f(33)));   // function composition should work
 }
@@ -75,11 +74,17 @@ int main() {
 
 // compute x^y recursively
 int exp(int x, int y) {
+    print(y);
     if (y == 0)
         return 1;
     else
-        return x*exp(y-1);
+        return x*exp(x, y-1);
     print(y);
+}
+
+int main() {
+    int b;
+    b = exp(3, 1);
 }
 
 // Hint: Use a stack of environments (stack of dictionaries)
