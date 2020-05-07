@@ -8,7 +8,7 @@
 // 3) eval works but the only way your program has output is
 //    using a print statement.
 // 4) No type checking, but your interpreter still never crashes.
-/*
+
 int main() {
 
     int x;
@@ -27,7 +27,7 @@ int main() {
         x = x - 1;
     }
 }
-*/
+/*
 // -------------------------------------------------------------------------------
 
 // Mid-level Functionality 90 Points

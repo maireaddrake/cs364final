@@ -51,7 +51,7 @@ class Parser:
                     decls = self.declarations()
                     stmts = self.statements()
                     if self.currtok[0] == Lexer.RBRACE:
-                        temp = FunctionDef(Type(t), IDExpr(id), params, decls, stmts)
+                        temp = FunctionDef(t, IDExpr(id), params, decls, stmts)
                         return temp
                     else:
                         raise SLUCSyntaxError("Missing Right Brace on line {0}".format(self.currtok[2]))

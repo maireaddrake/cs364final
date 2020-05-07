@@ -24,18 +24,17 @@ ops = {'*': operator.mul,
 
 # use a class hierarchy to represent types
 class Expr:
+    """
+    Parent class for other Exprs
+    """
     pass
 
 
-class Type:
-    def __init__(self, t: str):
-        self.t = t
-
-    def __str__(self):
-        return self.t
-
-
 class Params:
+    """
+    List of parameters in a function definition,
+    parameter variables are added to the environment.
+    """
     def __init__(self, prms: Sequence):
         self.prms = prms
 
@@ -53,6 +52,10 @@ class Params:
 
 
 class Declaration:
+    """
+    Variable type declarations, variables and their types are added to the
+    env dictionary (variable name to tuple(type, value))
+    """
     def __init__(self, t: type, id: Expr):
         self.t = t
         self.id = id
@@ -65,11 +68,18 @@ class Declaration:
 
 
 class Stmt:
+    """
+    Parent class for other Stmts
+    """
     pass
 
 
 class FunctionDef:
-    def __init__(self, t: Type, id: Expr, params: Params, decls: [Declaration], stmts: [Stmt]):
+    """
+    Creates env dictionary to store local variables used in this function, then evaluates
+    each statement.
+    """
+    def __init__(self, t: str, id: Expr, params: Params, decls: [Declaration], stmts: [Stmt]):
         self.t = t
         self.id = id
         self.params = params
@@ -106,6 +116,9 @@ class FunctionDef:
 
 
 class Assignment(Stmt):
+    """
+    Assigns values to variables in the env dictionary
+    """
     def __init__(self, var: Expr, exp: Expr):
         self.var = var
         self.exp = exp
@@ -137,6 +150,9 @@ class Assignment(Stmt):
 
 
 class Block(Stmt):
+    """
+    Processes a collection of statements
+    """
     def __init__(self, stmts: [[Stmt]]):
         self.stmts = stmts
 
@@ -148,7 +164,6 @@ class Block(Stmt):
         return temp
 
     def eval(self, env):
-        # TODO condition for empty list?
         for i in self.stmts:
             for j in i:
                 if type(j) != str:
@@ -156,6 +171,10 @@ class Block(Stmt):
 
 
 class IfStmt(Stmt):
+    """
+    Evaluates a condition and then processes either the true or false part
+    depending on the conditions value.
+    """
     def __init__(self, cond: Expr, truepart: Stmt, falsepart: [Stmt]):
         self.cond = cond
         self.truepart = truepart
@@ -177,6 +196,10 @@ class IfStmt(Stmt):
 
 
 class WhileStmt(Stmt):
+    """
+    Evaluates a condition and repeats the statement given as long as the condition
+    is true.
+    """
     def __init__(self, cond: Expr, inLoop: Stmt):
         self.cond = cond
         self.inLoop = inLoop
@@ -190,6 +213,9 @@ class WhileStmt(Stmt):
 
 
 class PrintStmt(Stmt):
+    """
+    Prints whatever arguments it is given.
+    """
     def __init__(self, pArg: Union[Expr, str], pArgList: Optional[Union[Expr, str]]):
         self.pArg = pArg
         self.pArgList = pArgList
@@ -214,6 +240,9 @@ class PrintStmt(Stmt):
 
 
 class ReturnStmt(Stmt):
+    """
+    Returns a value to the functionDef class, which then returns the same value.
+    """
     def __init__(self, exp: Expr):
         self.exp = exp
 
@@ -226,8 +255,12 @@ class ReturnStmt(Stmt):
 
 funcDict = {}
 
-class Program:
 
+class Program:
+    """
+    Main class that processes a list of function definitions and stores the definitions
+    in a dictionary so they can be called later.
+    """
     def __init__(self, funcs: Sequence[FunctionDef]):
         self.funcs = funcs
         global funcDict
@@ -247,7 +280,9 @@ class Program:
 
 
 class BinaryExpr(Expr):
-
+    """
+    Processes any expression involving 2 values and an operator.
+    """
     def __init__(self, left: Expr,  op: str, right: Expr):
         self.left = left
         self.right = right
@@ -265,6 +300,9 @@ class BinaryExpr(Expr):
 
 
 class UnaryOp(Expr):
+    """
+    Negates the value of the given expression.
+    """
     def __init__(self, tree: Expr, op: str):
         self.tree = tree
         self.op = op
@@ -277,7 +315,9 @@ class UnaryOp(Expr):
 
 
 class IDExpr(Expr):
-
+    """
+    Returns the value assosiated with the given variable, unless already a value.
+    """
     def __init__(self, id: str):
         self.id = id
 
@@ -290,12 +330,12 @@ class IDExpr(Expr):
         else:
             return env[self.id][1].eval(env)
 
-    def typeof(self, env) -> type:
-        # lookup the value of self.id Look up where?
-        return env[self.id][0].eval(env)
-
 
 class FunctionExpr(Expr):
+    """
+    Calls function definitions using the function dictionary created by
+    the program class.
+    """
     def __init__(self, id: str, params: []):
         self.id = id
         self.params = params
@@ -317,6 +357,9 @@ class FunctionExpr(Expr):
 
 
 class LitExpr(Expr):
+    """
+    Returns the value of the given literal of the given type.
+    """
     def __init__(self, lit: str, t: type):
         self.lit = lit
         self.t = t
@@ -329,9 +372,6 @@ class LitExpr(Expr):
 
     def eval(self, env):
         return self.t(self.lit)
-
-    def typeof(self, env) -> type:
-        return self.t
 
 
 class SLUCFunctionError(Exception):
