@@ -449,7 +449,7 @@ if __name__ == "__main__":
 
     filename = sys.argv[-1]
 
-    p = Parser("interpretertest.c")
+    p = Parser(filename)
 
     t = p.program()
 
